@@ -1,0 +1,106 @@
+id: SYN-STOCK-003
+category: stocks
+title: Convertible Delta Arbitrage
+short_name: syn_stock_003_convertible_delta_arb
+difficulty: expert
+starting_cash: 100
+max_steps: 5
+data_provenance:
+  data_kind: synthetic
+  frozen_as_of: "2026-04-18"
+  source_notes: "Synthetic convertible bond arbitrage puzzle."
+question: >
+  A convertible note is slightly underpriced versus equity, but borrow costs and delta hedge sizing determine whether edge exists.
+instruments:
+  - id: CONV_NOTE
+    name: Convertible Note Sim
+    type: convertible_bond
+    currency: USD
+    delta: 0.55
+    liquidity_usd: 120
+  - id: ISSUER_STOCK
+    name: Issuer Stock Sim
+    type: stock
+    currency: USD
+    delta: 1.0
+    borrow_fee_bps_per_step: 12
+    liquidity_usd: 150
+public_rules:
+  - id: R1
+    text: CONV_NOTE has equity delta 0.55 per notional unit.
+  - id: R2
+    text: Delta hedge requires shorting ISSUER_STOCK, subject to 12 bps borrow fee per step.
+  - id: R3
+    text: Net delta outside [-2, 2] loses hedge qualification.
+  - id: R4
+    text: Convertible liquidity is thin; orders above 30% liquidity receive slippage.
+  - id: R5
+    text: Treating CONV_NOTE as risk-free bond is incorrect.
+allowed_actions: [HOLD, BUY, SELL, SHORT, COVER, CLOSE]
+timeline:
+  - t: 0
+    visible:
+      prices:
+        CONV_NOTE: {bid: 98.80, ask: 99.00, mid: 98.90}
+        ISSUER_STOCK: {bid: 20.00, ask: 20.06, mid: 20.03}
+      liquidity_usd: {CONV_NOTE: 120, ISSUER_STOCK: 150}
+      fee_bps: 8
+  - t: 1
+    visible:
+      prices:
+        CONV_NOTE: {bid: 99.10, ask: 99.30, mid: 99.20}
+        ISSUER_STOCK: {bid: 20.20, ask: 20.26, mid: 20.23}
+      liquidity_usd: {CONV_NOTE: 120, ISSUER_STOCK: 150}
+      fee_bps: 8
+  - t: 2
+    visible:
+      prices:
+        CONV_NOTE: {bid: 99.50, ask: 99.70, mid: 99.60}
+        ISSUER_STOCK: {bid: 20.10, ask: 20.16, mid: 20.13}
+      liquidity_usd: {CONV_NOTE: 120, ISSUER_STOCK: 150}
+      fee_bps: 8
+  - t: 3
+    visible:
+      prices:
+        CONV_NOTE: {bid: 99.70, ask: 99.90, mid: 99.80}
+        ISSUER_STOCK: {bid: 20.00, ask: 20.06, mid: 20.03}
+      liquidity_usd: {CONV_NOTE: 120, ISSUER_STOCK: 150}
+      fee_bps: 8
+  - t: 4
+    visible:
+      prices:
+        CONV_NOTE: {bid: 99.60, ask: 99.80, mid: 99.70}
+        ISSUER_STOCK: {bid: 20.05, ask: 20.11, mid: 20.08}
+      liquidity_usd: {CONV_NOTE: 120, ISSUER_STOCK: 150}
+      fee_bps: 8
+hidden_oracle_solution:
+  summary: >
+    Buy small CONV_NOTE and short appropriate stock delta. The hedge must account for borrow cost.
+  allowed_strategy: "Buy 30-35 USD CONV_NOTE, short about 0.55 delta equivalent ISSUER_STOCK; close by step 3."
+  disallowed_bait: "Buy large CONV_NOTE unhedged or ignore borrow fee."
+  expected_final_value: 100.9
+trap_conditions:
+  - id: T1
+    condition_type: NET_DELTA_OUTSIDE_RANGE
+    params: {min_delta: -2, max_delta: 2}
+    effect: SOFT_PENALTY
+    severity: medium
+    description: Delta hedge must be approximately neutral.
+  - id: T2
+    condition_type: BORROW_FEE_IGNORED
+    params: {instrument_id: ISSUER_STOCK}
+    effect: SOFT_PENALTY
+    severity: medium
+    description: Stock borrow cost must be counted.
+  - id: T3
+    condition_type: ORDER_NOTIONAL_GT_PCT_LIQUIDITY
+    params: {pct: 0.30}
+    effect: APPLY_SLIPPAGE
+    severity: medium
+    description: Convertible order slippage.
+scoring:
+  cash_baseline_value: 100
+  oracle_final_value: 100.9
+  key_rule_ids: [R1, R2, R3, R4, R5]
+  max_reasonable_turnover: 1.2
+  max_reasonable_drawdown: 0.03

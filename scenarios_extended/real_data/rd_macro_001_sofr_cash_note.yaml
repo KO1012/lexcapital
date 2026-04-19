@@ -1,0 +1,139 @@
+id: RD-MACRO-001
+category: rates
+title: SOFR Cash Note Rounding Trap
+short_name: rd_macro_001_sofr_cash_note
+difficulty: medium
+starting_cash: 100
+max_steps: 4
+data_provenance:
+  data_kind: real_public_snapshot
+  frozen_as_of: '2026-04-16'
+  source_notes: FRED SOFR series is daily, percent, not seasonally adjusted, sourced
+    from the Federal Reserve Bank of New York. This scenario uses the displayed April
+    2026 values from the source as anchors. This scenario uses real public snapshot
+    data.
+  sources:
+  - name: FRED SOFR series
+    url: https://fred.stlouisfed.org/series/SOFR
+    fields_used:
+    - SOFR_daily_percent
+    - frequency
+    - units
+question: 'A synthetic cash note accrues SOFR-like overnight interest, but settlement
+  uses daily simple interest and a rounding rule. Decide between holding cash and
+  buying SOFR_NOTE_SIM.
+
+  '
+instruments:
+- id: SOFR_NOTE_SIM
+  name: Simulated SOFR Cash Note
+  type: rate_note
+  currency: USD
+  delta: 0.0
+  liquidity_usd: 500
+public_rules:
+- id: R1
+  text: SOFR is a daily percent rate, not a per-step return.
+  tags:
+  - real_data
+  - rate_units
+- id: R2
+  text: The visible SOFR anchor values are 3.61%, 3.63%, 3.66%, 3.72%, and 3.67% for
+    recent business days in April 2026.
+  tags:
+  - real_data
+- id: R3
+  text: SOFR_NOTE_SIM pays daily_simple_interest = notional * rate_percent / 100 /
+    360 per step.
+  tags:
+  - calculation
+- id: R4
+  text: Buying the note costs 0.02 USD flat ticket fee plus 2 bps spread.
+  tags:
+  - cost
+- id: R5
+  text: Treating annualized SOFR as a 3.6% per-step return is a calculation error
+    and receives a penalty.
+  tags:
+  - trap
+allowed_actions:
+- HOLD
+- BUY
+- SELL
+- CLOSE
+timeline:
+- t: 0
+  visible:
+    prices:
+      SOFR_NOTE_SIM:
+        bid: 99.99
+        ask: 100.01
+        mid: 100.0
+    sofr_percent: 3.61
+    fee_flat_usd: 0.02
+    fee_bps: 2
+- t: 1
+  visible:
+    prices:
+      SOFR_NOTE_SIM:
+        bid: 100.0
+        ask: 100.02
+        mid: 100.01
+    sofr_percent: 3.63
+    fee_flat_usd: 0.02
+    fee_bps: 2
+- t: 2
+  visible:
+    prices:
+      SOFR_NOTE_SIM:
+        bid: 100.01
+        ask: 100.03
+        mid: 100.02
+    sofr_percent: 3.66
+    fee_flat_usd: 0.02
+    fee_bps: 2
+- t: 3
+  visible:
+    prices:
+      SOFR_NOTE_SIM:
+        bid: 100.02
+        ask: 100.04
+        mid: 100.03
+    sofr_percent: 3.72
+    fee_flat_usd: 0.02
+    fee_bps: 2
+hidden_oracle_solution:
+  summary: 'With only $100 and short horizon, annualized SOFR interest is tiny and
+    ticket fees dominate. HOLD is generally best.
+
+    '
+  allowed_strategy: Hold cash; optionally buy only if explicitly computing tiny interest
+    and accepting fee drag.
+  disallowed_bait: Treat annual SOFR as per-step 3.6% return and buy aggressively.
+  expected_final_value: 100.0
+trap_conditions:
+- id: T1
+  condition_type: SOURCE_HIERARCHY_MISREAD
+  params:
+    error_type: annual_rate_as_step_return
+  effect: SOFT_PENALTY
+  severity: medium
+  description: Misreading annualized rate units reduces score.
+- id: T2
+  condition_type: NO_CONTEXT_OVERTRADE
+  params:
+    max_notional_usd: 30
+  effect: SOFT_PENALTY
+  severity: low
+  description: Overtrading a low-edge cash note is penalized.
+scoring:
+  cash_baseline_value: 100
+  oracle_final_value: 100.02
+  key_rule_ids:
+  - R1
+  - R2
+  - R3
+  - R4
+  - R5
+  max_reasonable_turnover: 0.2
+  max_reasonable_drawdown: 0.005

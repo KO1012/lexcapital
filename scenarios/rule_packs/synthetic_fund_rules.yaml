@@ -1,0 +1,12 @@
+id: synthetic_fund_liquidity_v1
+version: v1
+public_summary: >
+  Synthetic fund rules cover stale NAV, redemption fees, swing pricing, in-kind redemption,
+  creation units, and minimum notional constraints.
+rules:
+  - id: FUND1
+    text: Short-term redemptions may incur fees.
+  - id: FUND2
+    text: Large redemptions may trigger swing pricing.
+  - id: FUND3
+    text: In-kind or creation-unit mechanics require minimum notional.

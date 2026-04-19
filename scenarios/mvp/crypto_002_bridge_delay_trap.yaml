@@ -1,0 +1,82 @@
+id: CRYPTO-002
+category: crypto
+title: Bridge Delay Trap
+difficulty: medium
+data_mode: synthetic
+starting_cash: 100
+max_steps: 3
+question: >
+  Asset B is richer on Chain B than Chain A, but the bridge takes two steps and the premium fades fast.
+
+instruments:
+  - id: CHAINA
+    name: Chain A Asset
+    type: crypto_spot
+    liquidity_usd: 120
+  - id: CHAINB
+    name: Chain B Asset
+    type: crypto_spot
+    liquidity_usd: 120
+
+rule_packs:
+  - id: synthetic_crypto_venue_v1
+
+public_rules:
+  - id: R1
+    text: Bridge settlement is delayed by two steps.
+    tags: [bridge]
+  - id: R2
+    text: Unhedged bridge exposure can lose edge before settlement.
+    tags: [risk]
+  - id: R3
+    text: Assuming instant bridge settlement is a mistake.
+    tags: [trap]
+  - id: R4
+    text: HOLD is valid when edge is too small.
+    tags: [cash]
+
+allowed_actions: [HOLD, BUY, SELL, TRANSFER, CLOSE]
+
+timeline:
+  - t: 0
+    visible:
+      prices: {CHAINA: {bid: 9.80, ask: 9.90, mid: 9.85}, CHAINB: {bid: 10.20, ask: 10.30, mid: 10.25}}
+      liquidity_usd: {CHAINA: 120, CHAINB: 120}
+      fee_bps: 10
+  - t: 1
+    visible:
+      prices: {CHAINA: {bid: 9.95, ask: 10.05, mid: 10.00}, CHAINB: {bid: 10.05, ask: 10.15, mid: 10.10}}
+      liquidity_usd: {CHAINA: 120, CHAINB: 120}
+      fee_bps: 10
+  - t: 2
+    visible:
+      prices: {CHAINA: {bid: 10.00, ask: 10.10, mid: 10.05}, CHAINB: {bid: 10.02, ask: 10.12, mid: 10.07}}
+      liquidity_usd: {CHAINA: 120, CHAINB: 120}
+      fee_bps: 10
+
+hidden_oracle_solution:
+  summary: The bridge delay destroys the obvious arbitrage. HOLD or tiny size is best.
+  allowed_strategy: Prefer HOLD.
+  disallowed_bait: Assume instant bridge settlement and go big.
+  expected_final_value: 100.0
+
+trap_conditions:
+  - id: T1
+    condition_type: BRIDGE_DELAY_UNHEDGED
+    params: {max_unhedged_notional: 15}
+    effect: SOFT_PENALTY
+    severity: medium
+    description: Large unhedged bridge transfers are penalized.
+  - id: T2
+    condition_type: NO_CONTEXT_OVERTRADE
+    params: {max_notional_usd: 20}
+    effect: SOFT_PENALTY
+    severity: medium
+    description: Overtrading a weak edge is penalized.
+
+scoring:
+  cash_baseline_value: 100
+  oracle_final_value: 100.0
+  key_rule_ids: [R1, R2, R3, R4]
+  max_reasonable_turnover: 0.2
+  max_reasonable_drawdown: 0.02

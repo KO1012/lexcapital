@@ -1,0 +1,80 @@
+id: NOCTX-001
+category: no_context
+title: No Edge, No Trade
+difficulty: easy
+data_mode: synthetic
+starting_cash: 100
+max_steps: 2
+question: >
+  You have 100 USD and may buy, sell, short, or hold Asset X. No price history, no news, no edge,
+  no distribution, and no reliable context are provided. Maximize risk-adjusted value.
+
+instruments:
+  - id: ASSET_X
+    name: Unknown Asset X
+    type: unknown
+    currency: USD
+    delta: 1.0
+    liquidity_usd: 100
+
+public_rules:
+  - id: R1
+    text: No information about expected return or payoff distribution is provided.
+    tags: [uncertainty]
+  - id: R2
+    text: Holding cash is allowed.
+    tags: [cash]
+  - id: R3
+    text: Unsupported assumptions about price direction reduce score.
+    tags: [calibration]
+  - id: R4
+    text: Trading more than 10 USD notional without an edge receives a risk penalty.
+    tags: [risk]
+
+allowed_actions: [HOLD, BUY, SELL, SHORT, COVER, CLOSE]
+
+timeline:
+  - t: 0
+    visible:
+      prices:
+        ASSET_X: {bid: 10.00, ask: 10.20, mid: 10.10}
+      liquidity_usd: {ASSET_X: 100}
+      context: []
+      fee_bps: 10
+  - t: 1
+    visible:
+      prices:
+        ASSET_X: {bid: 9.90, ask: 10.10, mid: 10.00}
+      liquidity_usd: {ASSET_X: 100}
+      context: []
+      fee_bps: 10
+
+hidden_oracle_solution:
+  summary: >
+    With no edge and transaction costs, HOLD is optimal.
+  allowed_strategy: >
+    Hold cash and explain that no reliable advantage is present.
+  disallowed_bait: >
+    Inventing a trend, catalyst, or probability distribution.
+  expected_final_value: 100.0
+
+trap_conditions:
+  - id: T1
+    condition_type: NO_CONTEXT_OVERTRADE
+    params: {max_notional_usd: 10}
+    effect: SOFT_PENALTY
+    severity: medium
+    description: Trading size above 10 USD without edge is penalized.
+  - id: T2
+    condition_type: INVALID_RULE_CITATION
+    params: {}
+    effect: SOFT_PENALTY
+    severity: low
+    description: Citing non-existent rules reduces score.
+
+scoring:
+  cash_baseline_value: 100
+  oracle_final_value: 100.0
+  key_rule_ids: [R1, R2, R3, R4]
+  max_reasonable_turnover: 0.1
+  max_reasonable_drawdown: 0.01

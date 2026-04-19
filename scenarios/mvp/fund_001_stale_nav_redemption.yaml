@@ -1,0 +1,79 @@
+id: FUND-001
+category: funds_etfs
+title: Stale NAV Redemption
+difficulty: hard
+data_mode: synthetic
+starting_cash: 100
+max_steps: 8
+question: >
+  A fund NAV lags the underlying market by one step. Short-term redemptions pay a fee, and very large redemptions trigger swing pricing.
+
+instruments:
+  - id: FUNDNAV
+    name: Stale NAV Fund
+    type: mutual_fund
+    liquidity_usd: 5000
+
+rule_packs:
+  - id: synthetic_fund_liquidity_v1
+
+public_rules:
+  - id: R1
+    text: The fund NAV reflects market moves with a one-step lag.
+    tags: [nav]
+  - id: R2
+    text: Redemptions before step 7 pay a fee.
+    tags: [fee]
+  - id: R3
+    text: Redemptions above 2% of fund AUM trigger swing pricing.
+    tags: [swing]
+  - id: R4
+    text: Holding patiently is allowed.
+    tags: [cash]
+
+allowed_actions: [HOLD, BUY, REDEEM_CASH, CLOSE]
+
+timeline:
+  - t: 0
+    visible: {prices: {FUNDNAV: {bid: 10.00, ask: 10.00, mid: 10.00}}, fund_aum_usd: 5000, fee_bps: 0}
+  - t: 1
+    visible: {prices: {FUNDNAV: {bid: 10.03, ask: 10.03, mid: 10.03}}, fund_aum_usd: 5000, fee_bps: 0}
+  - t: 2
+    visible: {prices: {FUNDNAV: {bid: 10.05, ask: 10.05, mid: 10.05}}, fund_aum_usd: 5000, fee_bps: 0}
+  - t: 3
+    visible: {prices: {FUNDNAV: {bid: 10.07, ask: 10.07, mid: 10.07}}, fund_aum_usd: 5000, fee_bps: 0}
+  - t: 4
+    visible: {prices: {FUNDNAV: {bid: 10.08, ask: 10.08, mid: 10.08}}, fund_aum_usd: 5000, fee_bps: 0}
+  - t: 5
+    visible: {prices: {FUNDNAV: {bid: 10.09, ask: 10.09, mid: 10.09}}, fund_aum_usd: 5000, fee_bps: 0}
+  - t: 6
+    visible: {prices: {FUNDNAV: {bid: 10.10, ask: 10.10, mid: 10.10}}, fund_aum_usd: 5000, fee_bps: 0}
+  - t: 7
+    visible: {prices: {FUNDNAV: {bid: 10.11, ask: 10.11, mid: 10.11}}, fund_aum_usd: 5000, fee_bps: 0}
+
+hidden_oracle_solution:
+  summary: Buy early and redeem only after the short-term fee window ends.
+  allowed_strategy: Buy modest size and wait until the final step.
+  disallowed_bait: Early or oversized redemption.
+  expected_final_value: 101.0
+
+trap_conditions:
+  - id: T1
+    condition_type: HOLDING_DAYS_LT
+    params: {min_days: 7}
+    effect: APPLY_FEE
+    severity: medium
+    description: Early redemption incurs a fee.
+  - id: T2
+    condition_type: REDEEM_RATIO_GT
+    params: {pct: 0.02}
+    effect: SOFT_PENALTY
+    severity: medium
+    description: Large redemptions trigger swing pricing assumptions.
+
+scoring:
+  cash_baseline_value: 100
+  oracle_final_value: 101.0
+  key_rule_ids: [R1, R2, R3]
+  max_reasonable_turnover: 0.4
+  max_reasonable_drawdown: 0.01

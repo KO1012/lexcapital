@@ -1,0 +1,16 @@
+id: SIM-EVENT-RESOLUTION
+version: v1
+public_summary: >
+  Sandbox prediction-market resolution follows written criteria, official source hierarchy, and explicit contract timezone.
+public_rules:
+  - id: L-PM-1
+    text: Settlement depends on the written resolution criteria, not headlines or social media summaries.
+  - id: L-PM-2
+    text: Official sources override news reports when criteria conflict.
+  - id: L-PM-3
+    text: Deadlines use the timezone specified in the contract.
+  - id: L-PM-4
+    text: Ambiguous private statements do not satisfy official-source requirements.
+trap_condition_types:
+  - SOURCE_HIERARCHY_MISREAD
+  - TIMEZONE_DEADLINE_MISREAD

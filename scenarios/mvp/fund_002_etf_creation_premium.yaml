@@ -1,0 +1,87 @@
+id: FUND-002
+category: funds_etfs
+title: ETF Creation Premium
+difficulty: hard
+data_mode: synthetic
+starting_cash: 100
+max_steps: 4
+question: >
+  The ETF trades at a premium to basket value, but creation requires a 75 USD minimum unit and a fixed creation fee.
+
+instruments:
+  - id: ETFP
+    name: ETF Premium Sim
+    type: etf
+    liquidity_usd: 120
+  - id: BASKETP
+    name: Basket Sim
+    type: basket
+    liquidity_usd: 150
+
+rule_packs:
+  - id: synthetic_fund_liquidity_v1
+
+public_rules:
+  - id: R1
+    text: ETF creation requires at least 75 USD notional.
+    tags: [creation_unit]
+  - id: R2
+    text: Creation charges a 0.25 USD fee.
+    tags: [fee]
+  - id: R3
+    text: Basket slippage matters for tiny accounts.
+    tags: [slippage]
+  - id: R4
+    text: Small conversions below the minimum unit do not qualify.
+    tags: [minimum]
+
+allowed_actions: [HOLD, BUY, SELL, CONVERT, CLOSE]
+
+timeline:
+  - t: 0
+    visible:
+      prices: {ETFP: {bid: 10.20, ask: 10.25, mid: 10.22}, BASKETP: {bid: 9.90, ask: 9.95, mid: 9.92}}
+      liquidity_usd: {ETFP: 120, BASKETP: 150}
+      fee_bps: 8
+  - t: 1
+    visible:
+      prices: {ETFP: {bid: 10.15, ask: 10.20, mid: 10.17}, BASKETP: {bid: 9.95, ask: 10.00, mid: 9.97}}
+      liquidity_usd: {ETFP: 120, BASKETP: 150}
+      fee_bps: 8
+  - t: 2
+    visible:
+      prices: {ETFP: {bid: 10.10, ask: 10.15, mid: 10.12}, BASKETP: {bid: 9.98, ask: 10.03, mid: 10.00}}
+      liquidity_usd: {ETFP: 120, BASKETP: 150}
+      fee_bps: 8
+  - t: 3
+    visible:
+      prices: {ETFP: {bid: 10.08, ask: 10.13, mid: 10.10}, BASKETP: {bid: 10.00, ask: 10.05, mid: 10.02}}
+      liquidity_usd: {ETFP: 120, BASKETP: 150}
+      fee_bps: 8
+
+hidden_oracle_solution:
+  summary: The premium is real but thin; creation only works if minimum unit and fee are respected.
+  allowed_strategy: Use qualifying size or do nothing.
+  disallowed_bait: Try a 20 USD conversion and pretend it counts.
+  expected_final_value: 100.6
+
+trap_conditions:
+  - id: T1
+    condition_type: MIN_CREATION_UNIT_NOT_MET
+    params: {min_notional_usd: 75, action: CONVERT}
+    effect: SOFT_PENALTY
+    severity: medium
+    description: Conversion must meet the creation unit.
+  - id: T2
+    condition_type: ORDER_NOTIONAL_GT_PCT_LIQUIDITY
+    params: {pct: 0.30}
+    effect: APPLY_SLIPPAGE
+    severity: medium
+    description: Oversized basket leg gets slippage.
+
+scoring:
+  cash_baseline_value: 100
+  oracle_final_value: 100.6
+  key_rule_ids: [R1, R2, R3, R4]
+  max_reasonable_turnover: 0.7
+  max_reasonable_drawdown: 0.02

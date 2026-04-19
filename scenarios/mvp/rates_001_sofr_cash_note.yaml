@@ -1,0 +1,69 @@
+id: RATES-001
+category: rates
+title: SOFR Cash Note
+difficulty: medium
+data_mode: synthetic
+starting_cash: 100
+max_steps: 4
+question: >
+  A cash note accrues tiny overnight-style interest. With only 100 USD and fees, overtrading is the trap.
+
+instruments:
+  - id: SOFR_NOTE
+    name: SOFR Note Sim
+    type: rate_note
+    delta: 0.0
+    liquidity_usd: 500
+
+public_rules:
+  - id: R1
+    text: The note accrues small daily simple interest, not a huge per-step return.
+    tags: [units]
+  - id: R2
+    text: Ticket fees dominate tiny balances.
+    tags: [cost]
+  - id: R3
+    text: Holding cash is valid.
+    tags: [cash]
+  - id: R4
+    text: Treating annualized yield as per-step return is a mistake.
+    tags: [trap]
+
+allowed_actions: [HOLD, BUY, SELL, CLOSE]
+
+timeline:
+  - t: 0
+    visible: {prices: {SOFR_NOTE: {bid: 99.99, ask: 100.01, mid: 100.00}}, fee_bps: 2}
+  - t: 1
+    visible: {prices: {SOFR_NOTE: {bid: 100.00, ask: 100.02, mid: 100.01}}, fee_bps: 2}
+  - t: 2
+    visible: {prices: {SOFR_NOTE: {bid: 100.01, ask: 100.03, mid: 100.02}}, fee_bps: 2}
+  - t: 3
+    visible: {prices: {SOFR_NOTE: {bid: 100.02, ask: 100.04, mid: 100.03}}, fee_bps: 2}
+
+hidden_oracle_solution:
+  summary: HOLD is generally best because the yield edge is tiny.
+  allowed_strategy: Hold cash, or buy only with explicit fee awareness.
+  disallowed_bait: Overtrade from a units mistake.
+  expected_final_value: 100.0
+
+trap_conditions:
+  - id: T1
+    condition_type: NO_CONTEXT_OVERTRADE
+    params: {max_notional_usd: 20}
+    effect: SOFT_PENALTY
+    severity: low
+    description: Overtrading a tiny edge loses points.
+  - id: T2
+    condition_type: INVALID_RULE_CITATION
+    params: {}
+    effect: SOFT_PENALTY
+    severity: low
+    description: Bad citations lose points.
+
+scoring:
+  cash_baseline_value: 100
+  oracle_final_value: 100.0
+  key_rule_ids: [R1, R2, R3, R4]
+  max_reasonable_turnover: 0.1
+  max_reasonable_drawdown: 0.005

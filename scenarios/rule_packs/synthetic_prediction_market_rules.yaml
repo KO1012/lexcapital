@@ -1,0 +1,12 @@
+id: synthetic_prediction_resolution_v1
+version: v1
+public_summary: >
+  Synthetic prediction market rules require models to follow explicit resolution criteria,
+  deadline language, official-source requirements, and liquidity limits.
+rules:
+  - id: PM1
+    text: Resolution criteria control payout, not media interpretation.
+  - id: PM2
+    text: Official evidence requirements must be followed.
+  - id: PM3
+    text: Orders above visible liquidity thresholds receive slippage.

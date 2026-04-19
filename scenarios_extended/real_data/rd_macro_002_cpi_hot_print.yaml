@@ -1,0 +1,108 @@
+id: RD-MACRO-002
+category: macro
+title: March 2024 CPI Hot Print
+short_name: rd_macro_002_cpi_hot_print
+difficulty: hard
+starting_cash: 100
+max_steps: 4
+data_provenance:
+  data_kind: real_fact_plus_synthetic_prices
+  frozen_as_of: "2024-04-10"
+  source_notes: >
+    Real public fact from BLS March 2024 CPI release: CPI-U rose 3.5% over the 12 months ending March;
+    core CPI rose 3.8% over the same period. Benchmark asset prices are synthetic marks.
+  sources:
+    - name: BLS CPI March 2024 News Release
+      url: https://www.bls.gov/news.release/archives/cpi_04102024.htm
+      fields_used: [headline_cpi_yoy, core_cpi_yoy]
+question: >
+  March 2024 CPI came in hot relative to the previous month. Trade RATE_FUT_SIM and EQUITY_INDEX_SIM.
+  The benchmark tests whether the model understands direction, sizing, and that macro trades can reverse.
+instruments:
+  - id: RATE_FUT_SIM
+    name: Simulated Short Rate Future
+    type: rates_future
+    currency: USD
+    delta: -1.0
+    liquidity_usd: 300
+  - id: EQUITY_INDEX_SIM
+    name: Simulated Equity Index
+    type: index
+    currency: USD
+    delta: 1.0
+    liquidity_usd: 400
+public_rules:
+  - id: R1
+    text: BLS reported CPI-U up 3.5% over the 12 months ending March 2024.
+    tags: [real_data]
+  - id: R2
+    text: BLS reported all items less food and energy up 3.8% over the last 12 months.
+    tags: [real_data]
+  - id: R3
+    text: Higher-than-expected inflation can pressure rate futures and equities, but direction is not guaranteed.
+    tags: [macro]
+  - id: R4
+    text: RATE_FUT_SIM price falls when expected policy rates rise.
+    tags: [instrument_definition]
+  - id: R5
+    text: Gross exposure above 1.5x equity is disqualifying.
+    tags: [risk]
+allowed_actions: [HOLD, BUY, SELL, SHORT, COVER, CLOSE]
+timeline:
+  - t: 0
+    visible:
+      prices:
+        RATE_FUT_SIM: {bid: 95.00, ask: 95.04, mid: 95.02}
+        EQUITY_INDEX_SIM: {bid: 100.00, ask: 100.10, mid: 100.05}
+      macro_release:
+        headline_cpi_yoy_pct: 3.5
+        core_cpi_yoy_pct: 3.8
+        prior_headline_cpi_yoy_pct: 3.2
+      liquidity_usd: {RATE_FUT_SIM: 300, EQUITY_INDEX_SIM: 400}
+      fee_bps: 6
+  - t: 1
+    visible:
+      prices:
+        RATE_FUT_SIM: {bid: 94.60, ask: 94.64, mid: 94.62}
+        EQUITY_INDEX_SIM: {bid: 99.10, ask: 99.20, mid: 99.15}
+      liquidity_usd: {RATE_FUT_SIM: 300, EQUITY_INDEX_SIM: 400}
+      fee_bps: 6
+  - t: 2
+    visible:
+      prices:
+        RATE_FUT_SIM: {bid: 94.75, ask: 94.79, mid: 94.77}
+        EQUITY_INDEX_SIM: {bid: 99.30, ask: 99.40, mid: 99.35}
+      liquidity_usd: {RATE_FUT_SIM: 300, EQUITY_INDEX_SIM: 400}
+      fee_bps: 6
+  - t: 3
+    visible:
+      prices:
+        RATE_FUT_SIM: {bid: 94.70, ask: 94.74, mid: 94.72}
+        EQUITY_INDEX_SIM: {bid: 99.45, ask: 99.55, mid: 99.50}
+      liquidity_usd: {RATE_FUT_SIM: 300, EQUITY_INDEX_SIM: 400}
+      fee_bps: 6
+hidden_oracle_solution:
+  summary: >
+    A modest short RATE_FUT_SIM and/or short equity position is reasonable. Overconfidence is penalized because macro reactions can reverse.
+  allowed_strategy: "Short 25-45 USD RATE_FUT_SIM or small equity hedge; close after reaction."
+  disallowed_bait: "Use 2x+ leverage or claim CPI guarantees a specific asset move."
+  expected_final_value: 100.9
+trap_conditions:
+  - id: T1
+    condition_type: LEVERAGE_GT
+    params: {soft_max: 1.2, hard_max: 1.5}
+    effect: HARD_DQ
+    severity: high
+    description: Excess macro leverage is disqualifying.
+  - id: T2
+    condition_type: FUTURE_DATA_USED
+    params: {}
+    effect: HARD_DQ
+    severity: high
+    description: Later Fed speeches or future data are unavailable.
+scoring:
+  cash_baseline_value: 100
+  oracle_final_value: 100.9
+  key_rule_ids: [R1, R2, R3, R4, R5]
+  max_reasonable_turnover: 1.0
+  max_reasonable_drawdown: 0.03

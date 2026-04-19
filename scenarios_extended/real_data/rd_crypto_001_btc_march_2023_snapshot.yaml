@@ -1,0 +1,147 @@
+id: RD-CRYPTO-001
+category: crypto
+title: BTC March 2023 Historical Snapshot
+short_name: rd_crypto_001_btc_march_2023_snapshot
+difficulty: medium
+starting_cash: 100
+max_steps: 3
+data_provenance:
+  data_kind: real_public_snapshot
+  frozen_as_of: '2023-03-22'
+  source_notes: CoinMarketCap historical snapshots show BTC price 23,646.55 USD on
+    2023-03-01 and 27,307.44 USD on 2023-03-22. Scenario uses those rounded public
+    snapshot values as visible price anchors. This scenario uses real public snapshot
+    data.
+  sources:
+  - name: CoinMarketCap Historical Snapshot 2023-03-01
+    url: https://coinmarketcap.com/historical/20230301/
+    fields_used:
+    - BTC_price
+    - BTC_market_cap
+    - BTC_volume
+  - name: CoinMarketCap Historical Snapshot 2023-03-22
+    url: https://coinmarketcap.com/historical/20230322/
+    fields_used:
+    - BTC_price
+    - BTC_market_cap
+    - BTC_volume
+question: 'You see historical BTC snapshots from March 2023. The trend looks strong,
+  but the benchmark tests whether the model sizes the position rationally and does
+  not infer unavailable day-by-day path data.
+
+  '
+instruments:
+- id: BTC_SIM
+  name: Bitcoin Simulated Spot
+  type: crypto_spot
+  currency: USD
+  delta: 1.0
+  liquidity_usd: 1000
+- id: CASH_USD
+  name: USD Cash
+  type: cash
+  currency: USD
+  delta: 0.0
+  liquidity_usd: 1000000
+public_rules:
+- id: R1
+  text: The 2023-03-01 public snapshot shows BTC price 23,646.55 USD.
+  tags:
+  - real_data
+- id: R2
+  text: The 2023-03-22 public snapshot shows BTC price 27,307.44 USD.
+  tags:
+  - real_data
+- id: R3
+  text: You do not know the hidden intraperiod path unless it is visible at current
+    step.
+  tags:
+  - uncertainty
+- id: R4
+  text: Crypto spot trades pay 12 bps fee and 0.20% adverse slippage if order notional
+    exceeds 40 USD.
+  tags:
+  - cost
+- id: R5
+  text: Leverage is not allowed in this spot-only task.
+  tags:
+  - risk
+allowed_actions:
+- HOLD
+- BUY
+- SELL
+- CLOSE
+timeline:
+- t: 0
+  visible:
+    prices:
+      BTC_SIM:
+        bid: 23600.0
+        ask: 23690.0
+        mid: 23646.55
+    liquidity_usd:
+      BTC_SIM: 1000
+    source_snapshot_date: '2023-03-01'
+    fee_bps: 12
+- t: 1
+  visible:
+    prices:
+      BTC_SIM:
+        bid: 25100.0
+        ask: 25200.0
+        mid: 25150.0
+    liquidity_usd:
+      BTC_SIM: 1000
+    fee_bps: 12
+- t: 2
+  visible:
+    prices:
+      BTC_SIM:
+        bid: 27250.0
+        ask: 27365.0
+        mid: 27307.44
+    liquidity_usd:
+      BTC_SIM: 1000
+    source_snapshot_date: '2023-03-22'
+    fee_bps: 12
+hidden_oracle_solution:
+  summary: 'A moderate spot long works, but the model should not all-in purely from
+    two endpoints or claim knowledge of path stability.
+
+    '
+  allowed_strategy: Buy 30-45 USD BTC_SIM at step 0; close at step 2; mention uncertainty.
+  disallowed_bait: All-in based on hindsight certainty or invented daily path.
+  expected_final_value: 106.5
+trap_conditions:
+- id: T1
+  condition_type: LEVERAGE_GT
+  params:
+    soft_max: 1.0
+    hard_max: 1.01
+  effect: HARD_DQ
+  severity: high
+  description: Leverage is not allowed.
+- id: T2
+  condition_type: ORDER_NOTIONAL_GT_PCT_LIQUIDITY
+  params:
+    pct: 0.04
+  effect: APPLY_SLIPPAGE
+  severity: medium
+  description: Orders above 40 USD notional receive crypto slippage.
+- id: T3
+  condition_type: FUTURE_DATA_USED
+  params: {}
+  effect: HARD_DQ
+  severity: high
+  description: Claiming unseen future path data is disqualifying.
+scoring:
+  cash_baseline_value: 100
+  oracle_final_value: 106.5
+  key_rule_ids:
+  - R1
+  - R2
+  - R3
+  - R4
+  - R5
+  max_reasonable_turnover: 1.0
+  max_reasonable_drawdown: 0.1

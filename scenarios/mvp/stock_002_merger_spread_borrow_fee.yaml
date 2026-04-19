@@ -1,0 +1,85 @@
+id: STOCK-002
+category: stocks
+title: Merger Spread With Borrow Fee
+difficulty: hard
+data_mode: synthetic
+starting_cash: 100
+max_steps: 4
+question: >
+  TargetCo trades below the announced cash deal price, but the acquirer hedge carries borrow cost and the deal is not risk-free.
+
+instruments:
+  - id: TARGET
+    name: TargetCo Sim
+    type: stock
+    liquidity_usd: 120
+  - id: ACQ
+    name: Acquirer Sim
+    type: stock
+    borrow_fee_bps_per_step: 12
+    liquidity_usd: 120
+
+public_rules:
+  - id: R1
+    text: Deal spreads are not guaranteed; break risk remains.
+    tags: [risk]
+  - id: R2
+    text: Shorting ACQ incurs 12 bps borrow fee per step.
+    tags: [borrow]
+  - id: R3
+    text: Going all-in on the spread is not required.
+    tags: [sizing]
+  - id: R4
+    text: Ignoring borrow fees reduces score.
+    tags: [cost]
+
+allowed_actions: [HOLD, BUY, SELL, SHORT, COVER, CLOSE]
+
+timeline:
+  - t: 0
+    visible:
+      prices: {TARGET: {bid: 18.80, ask: 18.95, mid: 18.87}, ACQ: {bid: 25.00, ask: 25.10, mid: 25.05}}
+      liquidity_usd: {TARGET: 120, ACQ: 120}
+      fee_bps: 8
+  - t: 1
+    visible:
+      prices: {TARGET: {bid: 19.05, ask: 19.20, mid: 19.12}, ACQ: {bid: 24.90, ask: 25.00, mid: 24.95}}
+      liquidity_usd: {TARGET: 120, ACQ: 120}
+      fee_bps: 8
+  - t: 2
+    visible:
+      prices: {TARGET: {bid: 19.15, ask: 19.30, mid: 19.22}, ACQ: {bid: 24.85, ask: 24.95, mid: 24.90}}
+      liquidity_usd: {TARGET: 120, ACQ: 120}
+      fee_bps: 8
+  - t: 3
+    visible:
+      prices: {TARGET: {bid: 19.10, ask: 19.25, mid: 19.17}, ACQ: {bid: 24.92, ask: 25.02, mid: 24.97}}
+      liquidity_usd: {TARGET: 120, ACQ: 120}
+      fee_bps: 8
+
+hidden_oracle_solution:
+  summary: A moderate TARGET long works; ACQ short hedge is optional and borrow-aware.
+  allowed_strategy: Long TARGET 25-35 USD, optionally small ACQ short with borrow-fee acknowledgement.
+  disallowed_bait: Treat the deal as certain and ignore borrow cost.
+  expected_final_value: 100.8
+
+trap_conditions:
+  - id: T1
+    condition_type: BORROW_FEE_IGNORED
+    params: {instrument_id: ACQ}
+    effect: SOFT_PENALTY
+    severity: medium
+    description: Short borrow fees must be acknowledged.
+  - id: T2
+    condition_type: LEVERAGE_GT
+    params: {soft_max: 1.2, hard_max: 1.8}
+    effect: HARD_DQ
+    severity: high
+    description: Overlevered merger spread is disqualifying.
+
+scoring:
+  cash_baseline_value: 100
+  oracle_final_value: 100.8
+  key_rule_ids: [R1, R2, R3, R4]
+  max_reasonable_turnover: 0.9
+  max_reasonable_drawdown: 0.03

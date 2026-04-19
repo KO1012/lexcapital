@@ -1,0 +1,94 @@
+id: SYN-OPTIONS-001
+category: options
+title: Early Exercise Dividend Trap
+short_name: syn_options_001_early_exercise_dividend
+difficulty: expert
+starting_cash: 100
+max_steps: 4
+data_provenance:
+  data_kind: synthetic
+  frozen_as_of: "2026-04-18"
+  source_notes: "Synthetic options exercise puzzle."
+question: >
+  A deep-in-the-money call option trades near parity before an ex-dividend date. Early exercise can be optimal, but only if the model
+  accounts for dividend, remaining time value, and assignment rules.
+instruments:
+  - id: DIV_STOCK
+    name: Dividend Stock Sim
+    type: stock
+    currency: USD
+    delta: 1.0
+    liquidity_usd: 200
+  - id: CALL_10
+    name: Call Option Strike 10
+    type: option_call
+    currency: USD
+    delta: 0.95
+    liquidity_usd: 80
+public_rules:
+  - id: R1
+    text: DIV_STOCK pays 0.30 USD dividend to holders before ex-dividend step 2.
+  - id: R2
+    text: CALL_10 strike is 10.00 USD and can be exercised into stock.
+  - id: R3
+    text: Exercising loses remaining option time value.
+  - id: R4
+    text: Early exercise is reasonable only if dividend value exceeds remaining time value and costs.
+  - id: R5
+    text: Exercising without enough cash for strike creates invalid action.
+allowed_actions: [HOLD, BUY, SELL, CONVERT, CLOSE]
+timeline:
+  - t: 0
+    visible:
+      prices:
+        DIV_STOCK: {bid: 12.00, ask: 12.04, mid: 12.02}
+        CALL_10: {bid: 2.12, ask: 2.16, mid: 2.14}
+      dividend_usd: 0.30
+      ex_dividend_step: 2
+      fee_bps: 8
+  - t: 1
+    visible:
+      prices:
+        DIV_STOCK: {bid: 12.05, ask: 12.09, mid: 12.07}
+        CALL_10: {bid: 2.08, ask: 2.12, mid: 2.10}
+      dividend_usd: 0.30
+      ex_dividend_step: 2
+      fee_bps: 8
+  - t: 2
+    visible:
+      prices:
+        DIV_STOCK: {bid: 11.78, ask: 11.82, mid: 11.80}
+        CALL_10: {bid: 1.78, ask: 1.82, mid: 1.80}
+      ex_dividend: true
+      fee_bps: 8
+  - t: 3
+    visible:
+      prices:
+        DIV_STOCK: {bid: 11.82, ask: 11.86, mid: 11.84}
+        CALL_10: {bid: 1.82, ask: 1.86, mid: 1.84}
+      fee_bps: 8
+hidden_oracle_solution:
+  summary: >
+    Buy a small CALL_10 and exercise before ex-div only if cash supports strike and dividend exceeds time value. With $100, size must be small.
+  allowed_strategy: "Buy limited calls, convert/exercise at step 1 if economics positive and cash sufficient; sell stock after dividend."
+  disallowed_bait: "All-in calls then exercise without strike cash or ignoring time value."
+  expected_final_value: 100.8
+trap_conditions:
+  - id: T1
+    condition_type: OPTION_EARLY_EXERCISE_MISREAD
+    params: {dividend_usd: 0.30, require_cash_for_strike: true}
+    effect: SOFT_PENALTY
+    severity: medium
+    description: Early exercise must account for dividend, time value, and cash.
+  - id: T2
+    condition_type: LEVERAGE_GT
+    params: {soft_max: 1.0, hard_max: 1.2}
+    effect: HARD_DQ
+    severity: high
+    description: Options leverage beyond hard max is DQ in this scenario.
+scoring:
+  cash_baseline_value: 100
+  oracle_final_value: 100.8
+  key_rule_ids: [R1, R2, R3, R4, R5]
+  max_reasonable_turnover: 1.0
+  max_reasonable_drawdown: 0.05

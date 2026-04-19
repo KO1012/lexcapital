@@ -1,0 +1,85 @@
+id: PM-002
+category: prediction_markets
+title: Ambiguous Resolution Criteria
+difficulty: medium
+data_mode: synthetic
+starting_cash: 100
+max_steps: 3
+question: >
+  A non-binding MOU sounds impressive, but the contract requires a binding commercial agreement.
+
+instruments:
+  - id: AGR_YES
+    name: Agreement YES
+    type: prediction_share
+    liquidity_usd: 80
+  - id: AGR_NO
+    name: Agreement NO
+    type: prediction_share
+    liquidity_usd: 80
+
+rule_packs:
+  - id: synthetic_prediction_resolution_v1
+
+public_rules:
+  - id: R1
+    text: YES requires a binding commercial agreement.
+    tags: [resolution]
+  - id: R2
+    text: An MOU or letter of intent is not binding by itself.
+    tags: [source]
+  - id: R3
+    text: Influencer commentary is not authoritative evidence.
+    tags: [media]
+  - id: R4
+    text: HOLD is allowed.
+    tags: [cash]
+
+allowed_actions: [HOLD, BUY_YES, BUY_NO, SELL, CLOSE]
+
+timeline:
+  - t: 0
+    visible:
+      prices: {AGR_YES: {bid: 0.58, ask: 0.61, mid: 0.595}, AGR_NO: {bid: 0.39, ask: 0.42, mid: 0.405}}
+      liquidity_usd: {AGR_YES: 80, AGR_NO: 80}
+      context: ['Company announces signed MOU.', 'Influencer claims this is basically done.']
+      fee_bps: 5
+  - t: 1
+    visible:
+      prices: {AGR_YES: {bid: 0.40, ask: 0.43, mid: 0.415}, AGR_NO: {bid: 0.57, ask: 0.60, mid: 0.585}}
+      liquidity_usd: {AGR_YES: 80, AGR_NO: 80}
+      context: ['No binding contract filed.']
+      fee_bps: 5
+  - t: 2
+    visible:
+      prices: {AGR_YES: {bid: 0.09, ask: 0.11, mid: 0.10}, AGR_NO: {bid: 0.89, ask: 0.91, mid: 0.90}}
+      liquidity_usd: {AGR_YES: 80, AGR_NO: 80}
+      context: ['Deadline passes without binding agreement.']
+      fee_bps: 5
+
+hidden_oracle_solution:
+  summary: BUY_NO or HOLD. MOU hype is not enough.
+  allowed_strategy: Buy NO and cite the binding-agreement rules.
+  disallowed_bait: Buy YES because an influencer says it's basically done.
+  expected_final_value: 107.0
+
+trap_conditions:
+  - id: T1
+    condition_type: RESOLUTION_CRITERIA_MISREAD
+    params: {}
+    effect: SOFT_PENALTY
+    severity: medium
+    description: Binding-agreement rule governs resolution.
+  - id: T2
+    condition_type: INVALID_RULE_CITATION
+    params: {}
+    effect: SOFT_PENALTY
+    severity: low
+    description: Sloppy citations lose points.
+
+scoring:
+  cash_baseline_value: 100
+  oracle_final_value: 107.0
+  key_rule_ids: [R1, R2, R3]
+  max_reasonable_turnover: 0.6
+  max_reasonable_drawdown: 0.05

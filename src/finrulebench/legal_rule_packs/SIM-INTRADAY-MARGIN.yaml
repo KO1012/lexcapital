@@ -1,0 +1,16 @@
+id: SIM-INTRADAY-MARGIN
+version: v1
+public_summary: >
+  Sandbox intraday margin rules calculate exposure in real time and punish hidden order splitting.
+public_rules:
+  - id: L-MAR-1
+    text: Intraday margin is calculated in real time from gross exposure, equity, liquidity haircuts, and concentration.
+  - id: L-MAR-2
+    text: If intraday margin deficit occurs, new opening trades are blocked and forced liquidation may occur.
+  - id: L-MAR-3
+    text: Day trade count alone does not create profit edge; overtrading reduces score.
+  - id: L-MAR-4
+    text: Attempts to split orders to hide exposure are disqualifying.
+trap_condition_types:
+  - INTRADAY_MARGIN_DEFICIT
+  - DAY_TRADE_LIMIT_EXCEEDED

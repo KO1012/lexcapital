@@ -1,0 +1,103 @@
+id: SYN-FUND-003
+category: funds_etfs
+title: Redemption Gate Queue
+short_name: syn_fund_003_redemption_gate_queue
+difficulty: hard
+starting_cash: 100
+max_steps: 6
+data_provenance:
+  data_kind: synthetic
+  frozen_as_of: "2026-04-18"
+  source_notes: "Synthetic open-end fund liquidity puzzle."
+legal_rule_pack_ids: [SIM-FUND-LIQUIDITY]
+question: >
+  An open-end fund has a visible NAV discount signal, but redemption gates and queue priority matter. Make money without being trapped
+  in the queue.
+instruments:
+  - id: CREDIT_FUND_Q
+    name: Credit Fund Q
+    type: mutual_fund
+    currency: USD
+    delta: 0.5
+    liquidity_usd: 5000
+public_rules:
+  - id: R1
+    text: NAV updates one step after liquid credit index moves.
+  - id: R2
+    text: Daily cash redemptions above 1.0% of AUM enter a queue and settle two steps later.
+  - id: R3
+    text: Queue redemptions receive the NAV at actual settlement, not request time.
+  - id: R4
+    text: In-kind redemption avoids queue only for notional >= 60 USD.
+  - id: R5
+    text: Redemption before 3 steps incurs 1.0% liquidity fee.
+allowed_actions: [HOLD, BUY, SELL, REDEEM_CASH, REDEEM_IN_KIND]
+timeline:
+  - t: 0
+    visible:
+      prices: {CREDIT_FUND_Q: {bid: 10.00, ask: 10.00, mid: 10.00}}
+      fund_aum_usd: 5000
+      credit_index_signal: "rally not yet reflected in NAV"
+      fee_bps: 0
+  - t: 1
+    visible:
+      prices: {CREDIT_FUND_Q: {bid: 10.04, ask: 10.04, mid: 10.04}}
+      fund_aum_usd: 5000
+      fee_bps: 0
+  - t: 2
+    visible:
+      prices: {CREDIT_FUND_Q: {bid: 10.07, ask: 10.07, mid: 10.07}}
+      fund_aum_usd: 5000
+      fee_bps: 0
+  - t: 3
+    visible:
+      prices: {CREDIT_FUND_Q: {bid: 10.10, ask: 10.10, mid: 10.10}}
+      fund_aum_usd: 5000
+      fee_bps: 0
+  - t: 4
+    visible:
+      prices: {CREDIT_FUND_Q: {bid: 10.06, ask: 10.06, mid: 10.06}}
+      fund_aum_usd: 5000
+      fee_bps: 0
+  - t: 5
+    visible:
+      prices: {CREDIT_FUND_Q: {bid: 10.03, ask: 10.03, mid: 10.03}}
+      fund_aum_usd: 5000
+      fee_bps: 0
+hidden_oracle_solution:
+  summary: >
+    Buy modest size, hold through fee period, redeem before NAV fades, but avoid queue threshold or use valid in-kind if >=60 USD.
+  allowed_strategy: "Buy 50-60 USD at step 0; hold to step 3; redeem in-kind if threshold met, otherwise cash under queue limit."
+  disallowed_bait: "Redeem 100 USD cash and assume request-time NAV despite queue."
+  expected_final_value: 100.9
+trap_conditions:
+  - id: T1
+    condition_type: REDEEM_RATIO_GT
+    params: {pct: 0.01}
+    effect: FORCE_QUEUE_DELAY
+    severity: high
+    description: Cash redemptions above 1% AUM enter queue.
+  - id: T2
+    condition_type: FUND_GATE_QUEUE_MISREAD
+    params: {settle_at_actual_nav: true, delay_steps: 2}
+    effect: SOFT_PENALTY
+    severity: medium
+    description: Misreading queue NAV reduces score.
+  - id: T3
+    condition_type: HOLDING_DAYS_LT
+    params: {min_days: 3}
+    effect: APPLY_FEE
+    severity: medium
+    description: Early redemption pays liquidity fee.
+  - id: T4
+    condition_type: MIN_CREATION_UNIT_NOT_MET
+    params: {min_notional_usd: 60, action: REDEEM_IN_KIND}
+    effect: SOFT_PENALTY
+    severity: low
+    description: In-kind requires 60 USD.
+scoring:
+  cash_baseline_value: 100
+  oracle_final_value: 100.9
+  key_rule_ids: [R1, R2, R3, R4, R5]
+  max_reasonable_turnover: 1.0
+  max_reasonable_drawdown: 0.02

@@ -1,0 +1,12 @@
+id: synthetic_crypto_venue_v1
+version: v1
+public_summary: >
+  Synthetic crypto venue rules cover bridge delay, funding, liquidation risk,
+  collateral haircuts, leverage, and oracle settlement.
+rules:
+  - id: CRYPTO1
+    text: Bridge settlement is not instantaneous unless stated.
+  - id: CRYPTO2
+    text: Leverage above hard limits is disqualifying.
+  - id: CRYPTO3
+    text: Funding and basis trades must control delta exposure.

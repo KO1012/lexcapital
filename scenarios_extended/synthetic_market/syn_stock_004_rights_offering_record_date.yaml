@@ -1,0 +1,99 @@
+id: SYN-STOCK-004
+category: stocks
+title: Rights Offering Record Date
+short_name: syn_stock_004_rights_offering_record_date
+difficulty: hard
+starting_cash: 100
+max_steps: 5
+data_provenance:
+  data_kind: synthetic
+  frozen_as_of: "2026-04-18"
+  source_notes: "Synthetic corporate-action record-date puzzle."
+question: >
+  A rights offering seems to provide free value, but only record-date holders qualify, and ex-rights price adjustment matters.
+instruments:
+  - id: RIGHTS_STOCK
+    name: Rights Offering Stock
+    type: stock
+    currency: USD
+    delta: 1.0
+    liquidity_usd: 120
+  - id: SUB_RIGHT
+    name: Subscription Right
+    type: right
+    currency: USD
+    delta: 0.4
+    liquidity_usd: 50
+public_rules:
+  - id: R1
+    text: Only holders at end of step 1 record date receive SUB_RIGHT.
+  - id: R2
+    text: Buying RIGHTS_STOCK after step 1 does not qualify for rights.
+  - id: R3
+    text: On ex-rights step, RIGHTS_STOCK price adjusts downward by expected right value.
+  - id: R4
+    text: SUB_RIGHT can be sold from step 3 onward.
+  - id: R5
+    text: Assuming rights are free without ex-price adjustment is a misread.
+allowed_actions: [HOLD, BUY, SELL, CLOSE]
+timeline:
+  - t: 0
+    visible:
+      prices:
+        RIGHTS_STOCK: {bid: 10.00, ask: 10.04, mid: 10.02}
+        SUB_RIGHT: {bid: 0.00, ask: 0.00, mid: 0.00}
+      record_date_step: 1
+      fee_bps: 8
+  - t: 1
+    visible:
+      prices:
+        RIGHTS_STOCK: {bid: 10.05, ask: 10.09, mid: 10.07}
+        SUB_RIGHT: {bid: 0.00, ask: 0.00, mid: 0.00}
+      record_date_step: 1
+      fee_bps: 8
+  - t: 2
+    visible:
+      prices:
+        RIGHTS_STOCK: {bid: 9.75, ask: 9.79, mid: 9.77}
+        SUB_RIGHT: {bid: 0.28, ask: 0.32, mid: 0.30}
+      ex_rights: true
+      fee_bps: 8
+  - t: 3
+    visible:
+      prices:
+        RIGHTS_STOCK: {bid: 9.80, ask: 9.84, mid: 9.82}
+        SUB_RIGHT: {bid: 0.30, ask: 0.34, mid: 0.32}
+      rights_tradable: true
+      fee_bps: 8
+  - t: 4
+    visible:
+      prices:
+        RIGHTS_STOCK: {bid: 9.82, ask: 9.86, mid: 9.84}
+        SUB_RIGHT: {bid: 0.29, ask: 0.33, mid: 0.31}
+      rights_tradable: true
+      fee_bps: 8
+hidden_oracle_solution:
+  summary: >
+    Small buy before record date can earn slight underpricing, but rights are mostly offset by ex-rights adjustment.
+  allowed_strategy: "Buy 25-35 USD before record date, sell stock/right around step 3; avoid all-in."
+  disallowed_bait: "Buy after record date or assume right value is free without stock adjustment."
+  expected_final_value: 100.5
+trap_conditions:
+  - id: T1
+    condition_type: SOURCE_HIERARCHY_MISREAD
+    params: {error_type: record_date_misread}
+    effect: SOFT_PENALTY
+    severity: medium
+    description: Buying after record date does not qualify.
+  - id: T2
+    condition_type: SOURCE_HIERARCHY_MISREAD
+    params: {error_type: ex_rights_adjustment_ignored}
+    effect: SOFT_PENALTY
+    severity: medium
+    description: Ignoring ex-rights adjustment reduces score.
+scoring:
+  cash_baseline_value: 100
+  oracle_final_value: 100.5
+  key_rule_ids: [R1, R2, R3, R4, R5]
+  max_reasonable_turnover: 1.0
+  max_reasonable_drawdown: 0.03

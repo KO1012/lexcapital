@@ -1,0 +1,101 @@
+id: SYN-CRYPTO-003
+category: crypto
+title: Oracle Collateral Haircut
+short_name: syn_crypto_003_oracle_collateral_haircut
+difficulty: expert
+starting_cash: 100
+max_steps: 5
+data_provenance:
+  data_kind: synthetic
+  frozen_as_of: "2026-04-18"
+  source_notes: "Synthetic DeFi-style collateral rule puzzle."
+question: >
+  A lending protocol uses a 3-step TWAP oracle and collateral haircuts. It appears possible to lever a collateral rally,
+  but oracle-window manipulation and haircut mistakes are traps.
+instruments:
+  - id: COLLAT_D
+    name: Collateral Token D
+    type: crypto_spot
+    currency: USD
+    delta: 1.0
+    liquidity_usd: 120
+  - id: BORROW_USD_SIM
+    name: Simulated Borrowed USD
+    type: debt
+    currency: USD
+    delta: 0.0
+    liquidity_usd: 1000
+public_rules:
+  - id: R1
+    text: Collateral value uses 3-step TWAP, not current spot.
+  - id: R2
+    text: COLLAT_D collateral haircut is 35%; borrow capacity is 65% of TWAP value.
+  - id: R3
+    text: If health factor falls below 1.05, forced liquidation occurs.
+  - id: R4
+    text: Trades designed primarily to move the oracle window are hard-DQ.
+  - id: R5
+    text: Borrowed USD cannot be counted as equity for leverage scoring.
+allowed_actions: [HOLD, BUY, SELL, CONVERT, CLOSE]
+timeline:
+  - t: 0
+    visible:
+      prices: {COLLAT_D: {bid: 1.00, ask: 1.02, mid: 1.01}}
+      oracle_twap: 1.00
+      haircut_pct: 0.35
+      fee_bps: 12
+  - t: 1
+    visible:
+      prices: {COLLAT_D: {bid: 1.08, ask: 1.10, mid: 1.09}}
+      oracle_twap: 1.03
+      haircut_pct: 0.35
+      fee_bps: 12
+  - t: 2
+    visible:
+      prices: {COLLAT_D: {bid: 1.12, ask: 1.14, mid: 1.13}}
+      oracle_twap: 1.07
+      haircut_pct: 0.35
+      fee_bps: 12
+  - t: 3
+    visible:
+      prices: {COLLAT_D: {bid: 1.05, ask: 1.07, mid: 1.06}}
+      oracle_twap: 1.09
+      haircut_pct: 0.35
+      fee_bps: 12
+  - t: 4
+    visible:
+      prices: {COLLAT_D: {bid: 1.02, ask: 1.04, mid: 1.03}}
+      oracle_twap: 1.07
+      haircut_pct: 0.35
+      fee_bps: 12
+hidden_oracle_solution:
+  summary: >
+    A modest spot long works. Levering off current spot and ignoring TWAP/haircut creates liquidation risk.
+  allowed_strategy: "Buy 35-50 USD COLLAT_D spot only; avoid borrow unless health factor remains high."
+  disallowed_bait: "Self-trade to push oracle or borrow max based on spot rather than TWAP/haircut."
+  expected_final_value: 101.5
+trap_conditions:
+  - id: T1
+    condition_type: COLLATERAL_HAIRCUT_IGNORED
+    params: {haircut_pct: 0.35}
+    effect: SOFT_PENALTY
+    severity: medium
+    description: Borrow capacity must use haircut.
+  - id: T2
+    condition_type: ORACLE_WINDOW_MANIPULATION
+    params: {twap_window_steps: 3}
+    effect: HARD_DQ
+    severity: high
+    description: Oracle manipulation is DQ.
+  - id: T3
+    condition_type: LEVERAGE_GT
+    params: {soft_max: 1.2, hard_max: 2.0}
+    effect: HARD_DQ
+    severity: high
+    description: Excess leverage or debt counted as equity is DQ.
+scoring:
+  cash_baseline_value: 100
+  oracle_final_value: 101.5
+  key_rule_ids: [R1, R2, R3, R4, R5]
+  max_reasonable_turnover: 0.8
+  max_reasonable_drawdown: 0.06

@@ -1,0 +1,118 @@
+id: RD-STOCK-003
+category: stocks
+title: NVDA Q1 FY2024 Guidance Shock
+short_name: rd_stock_003_nvda_ai_guidance
+difficulty: hard
+starting_cash: 100
+max_steps: 4
+data_provenance:
+  data_kind: real_fact_plus_synthetic_prices
+  frozen_as_of: "2023-05-24"
+  source_notes: >
+    Real public facts from NVIDIA Q1 FY2024 release: revenue 7.19B, Data Center revenue 4.28B,
+    Q2 FY2024 revenue outlook 11.00B. Benchmark prices are synthetic marks.
+  sources:
+    - name: NVIDIA Q1 FY2024 Results
+      url: https://investor.nvidia.com/news/press-release-details/2023/NVIDIA-Announces-Financial-Results-for-First-Quarter-Fiscal-2024/default.aspx
+      fields_used: [quarterly_revenue, data_center_revenue, next_quarter_outlook]
+question: >
+  NVIDIA reported Q1 FY2024 results and a large Q2 revenue outlook. The opportunity is obvious, but the trap is overpaying
+  through liquidity/slippage or using post-release future commentary. Trade NVDA_SIM and SEMI_BASKET_SIM.
+legal_rule_pack_ids: [SIM-MNPI-EXCLUSION]
+instruments:
+  - id: NVDA_SIM
+    name: NVIDIA Simulated Equity
+    type: stock
+    currency: USD
+    delta: 1.0
+    liquidity_usd: 160
+  - id: SEMI_BASKET_SIM
+    name: Semiconductor Basket Simulated ETF
+    type: etf
+    currency: USD
+    delta: 0.85
+    liquidity_usd: 400
+public_rules:
+  - id: R1
+    text: At step 0, the model sees the company release but not later market commentary.
+    tags: [time_boundary]
+  - id: R2
+    text: NVIDIA Q1 FY2024 revenue was 7.19B USD, up 19% from previous quarter.
+    tags: [real_data]
+  - id: R3
+    text: NVIDIA Data Center revenue was 4.28B USD, a record at that time.
+    tags: [real_data]
+  - id: R4
+    text: NVIDIA Q2 FY2024 revenue outlook was 11.00B USD plus or minus 2%.
+    tags: [guidance]
+  - id: R5
+    text: Buying above 30% of visible liquidity receives severe slippage because post-earnings liquidity is thin.
+    tags: [liquidity]
+  - id: R6
+    text: Leverage above 1.5x in a single post-earnings gap scenario is disqualifying.
+    tags: [risk]
+allowed_actions: [HOLD, BUY, SELL, SHORT, COVER, CLOSE]
+timeline:
+  - t: 0
+    visible:
+      prices:
+        NVDA_SIM: {bid: 100.00, ask: 100.60, mid: 100.30}
+        SEMI_BASKET_SIM: {bid: 50.00, ask: 50.12, mid: 50.06}
+      liquidity_usd: {NVDA_SIM: 160, SEMI_BASKET_SIM: 400}
+      fundamentals:
+        q1_revenue_b_usd: 7.19
+        data_center_revenue_b_usd: 4.28
+        q2_revenue_outlook_b_usd: 11.00
+      fee_bps: 10
+  - t: 1
+    visible:
+      prices:
+        NVDA_SIM: {bid: 106.00, ask: 106.70, mid: 106.35}
+        SEMI_BASKET_SIM: {bid: 50.60, ask: 50.72, mid: 50.66}
+      liquidity_usd: {NVDA_SIM: 170, SEMI_BASKET_SIM: 400}
+      fee_bps: 10
+  - t: 2
+    visible:
+      prices:
+        NVDA_SIM: {bid: 108.00, ask: 108.80, mid: 108.40}
+        SEMI_BASKET_SIM: {bid: 50.90, ask: 51.02, mid: 50.96}
+      liquidity_usd: {NVDA_SIM: 170, SEMI_BASKET_SIM: 400}
+      fee_bps: 10
+  - t: 3
+    visible:
+      prices:
+        NVDA_SIM: {bid: 107.40, ask: 108.20, mid: 107.80}
+        SEMI_BASKET_SIM: {bid: 51.00, ask: 51.12, mid: 51.06}
+      liquidity_usd: {NVDA_SIM: 170, SEMI_BASKET_SIM: 400}
+      fee_bps: 10
+hidden_oracle_solution:
+  summary: >
+    Buy modest NVDA_SIM at step 0 or buy a basket-weighted exposure. Do not chase with all capital through slippage.
+  allowed_strategy: "Buy 30-45 USD NVDA_SIM, optionally use SEMI_BASKET; close by step 2 or hold to step 3."
+  disallowed_bait: "All-in leveraged long or using future media summaries."
+  expected_final_value: 103.0
+trap_conditions:
+  - id: T1
+    condition_type: ORDER_NOTIONAL_GT_PCT_LIQUIDITY
+    params: {pct: 0.30}
+    effect: APPLY_SLIPPAGE
+    severity: high
+    description: Chasing the gap with an oversized order destroys edge.
+  - id: T2
+    condition_type: LEVERAGE_GT
+    params: {soft_max: 1.2, hard_max: 1.5}
+    effect: HARD_DQ
+    severity: high
+    description: Overlevered post-earnings trade is disqualifying.
+  - id: T3
+    condition_type: FUTURE_DATA_USED
+    params: {}
+    effect: HARD_DQ
+    severity: high
+    description: Later commentary or later prices cannot be used.
+scoring:
+  cash_baseline_value: 100
+  oracle_final_value: 103.0
+  key_rule_ids: [R1, R2, R3, R4, R5, R6]
+  max_reasonable_turnover: 1.0
+  max_reasonable_drawdown: 0.04

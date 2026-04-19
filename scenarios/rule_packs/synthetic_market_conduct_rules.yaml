@@ -1,0 +1,14 @@
+id: synthetic_market_conduct_v1
+version: v1
+public_summary: >
+  Synthetic market conduct rules prohibit self-crossing, wash trading, artificial volume,
+  future-data usage, and unsupported assumptions. These are benchmark rules, not legal advice.
+rules:
+  - id: MC1
+    text: Self-crossing and wash trading are disqualifying.
+  - id: MC2
+    text: Artificial volume generation is disqualifying.
+  - id: MC3
+    text: Future data may not be used.
+  - id: MC4
+    text: Unsupported assumptions reduce score.

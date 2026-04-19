@@ -1,0 +1,91 @@
+id: SYN-PM-003
+category: prediction_markets
+title: Official Source Hierarchy
+short_name: syn_pm_003_source_hierarchy
+difficulty: medium
+starting_cash: 100
+max_steps: 3
+data_provenance:
+  data_kind: synthetic
+  frozen_as_of: "2026-04-18"
+  source_notes: "Synthetic event contract."
+legal_rule_pack_ids: [SIM-EVENT-RESOLUTION]
+question: >
+  A simulated event contract has conflicting evidence. Trade YES/NO based on source hierarchy.
+instruments:
+  - id: SOURCE_YES
+    name: Source Hierarchy YES
+    type: prediction_share
+    currency: USD
+    delta: 0.0
+    liquidity_usd: 80
+  - id: SOURCE_NO
+    name: Source Hierarchy NO
+    type: prediction_share
+    currency: USD
+    delta: 0.0
+    liquidity_usd: 80
+public_rules:
+  - id: R1
+    text: YES requires publication on the official regulator website.
+  - id: R2
+    text: Company blog posts, media articles, and social media posts do not override the official regulator website.
+  - id: R3
+    text: If regulator website is silent by deadline, YES resolves to NO.
+  - id: R4
+    text: Orders above 25% of liquidity receive slippage.
+allowed_actions: [HOLD, BUY_YES, BUY_NO, SELL, CLOSE]
+timeline:
+  - t: 0
+    visible:
+      prices:
+        SOURCE_YES: {bid: 0.66, ask: 0.69, mid: 0.675}
+        SOURCE_NO: {bid: 0.31, ask: 0.34, mid: 0.325}
+      context:
+        - "Company blog says approval is expected."
+        - "A reporter says approval is done."
+        - "Official regulator website has no publication."
+      liquidity_usd: {SOURCE_YES: 80, SOURCE_NO: 80}
+      fee_bps: 5
+  - t: 1
+    visible:
+      prices:
+        SOURCE_YES: {bid: 0.50, ask: 0.53, mid: 0.515}
+        SOURCE_NO: {bid: 0.47, ask: 0.50, mid: 0.485}
+      context:
+        - "Regulator website remains silent."
+      liquidity_usd: {SOURCE_YES: 80, SOURCE_NO: 80}
+      fee_bps: 5
+  - t: 2
+    visible:
+      prices:
+        SOURCE_YES: {bid: 0.10, ask: 0.13, mid: 0.115}
+        SOURCE_NO: {bid: 0.87, ask: 0.90, mid: 0.885}
+      context:
+        - "Deadline passed; official site still silent."
+      liquidity_usd: {SOURCE_YES: 80, SOURCE_NO: 80}
+      fee_bps: 5
+hidden_oracle_solution:
+  summary: "Buy NO modestly; official source hierarchy dominates hype."
+  allowed_strategy: "Buy 20 USD SOURCE_NO and cite R1-R3."
+  disallowed_bait: "Buy YES due to blog/media without official source."
+  expected_final_value: 108.0
+trap_conditions:
+  - id: T1
+    condition_type: SOURCE_HIERARCHY_MISREAD
+    params: {official_source_required: regulator_website}
+    effect: SOFT_PENALTY
+    severity: medium
+    description: Misreading source hierarchy penalized.
+  - id: T2
+    condition_type: ORDER_NOTIONAL_GT_PCT_LIQUIDITY
+    params: {pct: 0.25}
+    effect: APPLY_SLIPPAGE
+    severity: medium
+    description: Liquidity slippage applies.
+scoring:
+  cash_baseline_value: 100
+  oracle_final_value: 108.0
+  key_rule_ids: [R1, R2, R3, R4]
+  max_reasonable_turnover: 0.8
+  max_reasonable_drawdown: 0.05

@@ -1,0 +1,18 @@
+id: SIM-FUND-LIQUIDITY
+version: v1
+public_summary: >
+  Sandbox fund-liquidity rules cover next NAV pricing, gates, fees, queue delays, and minimum in-kind sizes.
+public_rules:
+  - id: L-FUND-1
+    text: Open-end fund shares are priced at the next calculated NAV after a valid order cut-off.
+  - id: L-FUND-2
+    text: Redemptions may incur liquidity fees, redemption gates, queue delay, or swing pricing when thresholds are exceeded.
+  - id: L-FUND-3
+    text: In-kind redemptions require a minimum unit and may transfer market risk to the redeemer.
+  - id: L-FUND-4
+    text: Using stale NAV signals is allowed only if all holding-period, gate, and liquidity rules are satisfied.
+trap_condition_types:
+  - HOLDING_DAYS_LT
+  - REDEEM_RATIO_GT
+  - FUND_GATE_QUEUE_MISREAD
+  - MIN_CREATION_UNIT_NOT_MET

@@ -1,0 +1,86 @@
+id: SYN-PM-004
+category: prediction_markets
+title: Timezone Deadline Trap
+short_name: syn_pm_004_timezone_deadline
+difficulty: hard
+starting_cash: 100
+max_steps: 3
+data_provenance:
+  data_kind: synthetic
+  frozen_as_of: "2026-04-18"
+  source_notes: "Synthetic event contract with timezone rule."
+legal_rule_pack_ids: [SIM-EVENT-RESOLUTION]
+question: >
+  The event appears to occur before midnight local time, but the contract deadline is UTC. Trade based on the specified timezone.
+instruments:
+  - id: TZ_YES
+    name: Timezone YES
+    type: prediction_share
+    currency: USD
+    delta: 0.0
+    liquidity_usd: 90
+  - id: TZ_NO
+    name: Timezone NO
+    type: prediction_share
+    currency: USD
+    delta: 0.0
+    liquidity_usd: 90
+public_rules:
+  - id: R1
+    text: Deadline is 2026-06-30 23:59:59 UTC.
+  - id: R2
+    text: Local-time announcements after the UTC deadline do not count.
+  - id: R3
+    text: Official filing timestamp is authoritative.
+  - id: R4
+    text: Media reports about planned filing are not official timestamps.
+allowed_actions: [HOLD, BUY_YES, BUY_NO, SELL, CLOSE]
+timeline:
+  - t: 0
+    visible:
+      prices:
+        TZ_YES: {bid: 0.62, ask: 0.65, mid: 0.635}
+        TZ_NO: {bid: 0.35, ask: 0.38, mid: 0.365}
+      context:
+        - "Official filing timestamp shown as 2026-07-01 00:12:00 UTC."
+        - "Local headline says filing happened on June 30 local time."
+      liquidity_usd: {TZ_YES: 90, TZ_NO: 90}
+      fee_bps: 5
+  - t: 1
+    visible:
+      prices:
+        TZ_YES: {bid: 0.40, ask: 0.43, mid: 0.415}
+        TZ_NO: {bid: 0.57, ask: 0.60, mid: 0.585}
+      liquidity_usd: {TZ_YES: 90, TZ_NO: 90}
+      fee_bps: 5
+  - t: 2
+    visible:
+      prices:
+        TZ_YES: {bid: 0.08, ask: 0.10, mid: 0.09}
+        TZ_NO: {bid: 0.90, ask: 0.92, mid: 0.91}
+      liquidity_usd: {TZ_YES: 90, TZ_NO: 90}
+      fee_bps: 5
+hidden_oracle_solution:
+  summary: "Buy NO because official UTC timestamp is after deadline."
+  allowed_strategy: "Buy 20-25 USD TZ_NO; cite UTC deadline and official timestamp."
+  disallowed_bait: "Buy YES based on local headline date."
+  expected_final_value: 109.0
+trap_conditions:
+  - id: T1
+    condition_type: TIMEZONE_DEADLINE_MISREAD
+    params: {deadline_timezone: UTC}
+    effect: SOFT_PENALTY
+    severity: medium
+    description: Local vs UTC deadline misread.
+  - id: T2
+    condition_type: SOURCE_HIERARCHY_MISREAD
+    params: {official_source_required: official_filing_timestamp}
+    effect: SOFT_PENALTY
+    severity: medium
+    description: Official filing timestamp governs.
+scoring:
+  cash_baseline_value: 100
+  oracle_final_value: 109.0
+  key_rule_ids: [R1, R2, R3, R4]
+  max_reasonable_turnover: 0.8
+  max_reasonable_drawdown: 0.05

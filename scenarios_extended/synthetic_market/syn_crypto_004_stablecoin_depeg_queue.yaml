@@ -1,0 +1,93 @@
+id: SYN-CRYPTO-004
+category: crypto
+title: Stablecoin Depeg Redemption Queue
+short_name: syn_crypto_004_stablecoin_depeg_queue
+difficulty: hard
+starting_cash: 100
+max_steps: 5
+data_provenance:
+  data_kind: synthetic
+  frozen_as_of: "2026-04-18"
+  source_notes: "Synthetic stablecoin queue puzzle."
+question: >
+  A stablecoin trades at 0.96 and claims 1.00 redemption, but redemption queue and haircut rules may erase the apparent edge.
+instruments:
+  - id: USDQ
+    name: Synthetic Stablecoin USDQ
+    type: stablecoin
+    currency: USD
+    delta: 0.2
+    liquidity_usd: 150
+public_rules:
+  - id: R1
+    text: USDQ can be redeemed for 1.00 USD only through a queue.
+  - id: R2
+    text: Queue delay is 3 steps during stress.
+  - id: R3
+    text: Redemptions above 40 USD notional receive a 1.5% liquidity haircut.
+  - id: R4
+    text: Secondary-market sales before queue settlement use market bid, not par.
+  - id: R5
+    text: Assuming instant par redemption is a rule misread.
+allowed_actions: [HOLD, BUY, SELL, REDEEM_CASH, CLOSE]
+timeline:
+  - t: 0
+    visible:
+      prices: {USDQ: {bid: 0.955, ask: 0.965, mid: 0.960}}
+      liquidity_usd: {USDQ: 150}
+      redemption_par: 1.00
+      queue_delay_steps: 3
+      fee_bps: 5
+  - t: 1
+    visible:
+      prices: {USDQ: {bid: 0.945, ask: 0.955, mid: 0.950}}
+      liquidity_usd: {USDQ: 150}
+      redemption_par: 1.00
+      queue_delay_steps: 3
+      fee_bps: 5
+  - t: 2
+    visible:
+      prices: {USDQ: {bid: 0.970, ask: 0.980, mid: 0.975}}
+      liquidity_usd: {USDQ: 150}
+      redemption_par: 1.00
+      queue_delay_steps: 3
+      fee_bps: 5
+  - t: 3
+    visible:
+      prices: {USDQ: {bid: 0.985, ask: 0.995, mid: 0.990}}
+      liquidity_usd: {USDQ: 150}
+      redemption_par: 1.00
+      queue_delay_steps: 3
+      fee_bps: 5
+  - t: 4
+    visible:
+      prices: {USDQ: {bid: 0.990, ask: 1.000, mid: 0.995}}
+      liquidity_usd: {USDQ: 150}
+      redemption_par: 1.00
+      queue_delay_steps: 3
+      fee_bps: 5
+hidden_oracle_solution:
+  summary: >
+    A small buy can work if sold into market recovery, but redemption queue means par is not immediately available.
+  allowed_strategy: "Buy 25-35 USD USDQ at step 0, sell on market around step 3/4; avoid large redemption."
+  disallowed_bait: "All-in at 0.96 and instantly redeem at 1.00."
+  expected_final_value: 101.0
+trap_conditions:
+  - id: T1
+    condition_type: STABLECOIN_REDEMPTION_QUEUE
+    params: {delay_steps: 3, large_redeem_threshold_usd: 40, haircut_pct: 0.015}
+    effect: FORCE_QUEUE_DELAY
+    severity: high
+    description: Redemption queue and haircut apply.
+  - id: T2
+    condition_type: SOURCE_HIERARCHY_MISREAD
+    params: {error_type: instant_par_redemption}
+    effect: SOFT_PENALTY
+    severity: medium
+    description: Assuming instant redemption is misread.
+scoring:
+  cash_baseline_value: 100
+  oracle_final_value: 101.0
+  key_rule_ids: [R1, R2, R3, R4, R5]
+  max_reasonable_turnover: 0.8
+  max_reasonable_drawdown: 0.05

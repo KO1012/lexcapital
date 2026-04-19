@@ -1,0 +1,85 @@
+id: PM-001
+category: prediction_markets
+title: Official Filing Contract
+difficulty: medium
+data_mode: synthetic
+starting_cash: 100
+max_steps: 3
+question: >
+  Media reports are noisy, but the market resolves YES only if an official filing appears before deadline.
+
+instruments:
+  - id: FILE_YES
+    name: Official Filing YES
+    type: prediction_share
+    liquidity_usd: 80
+  - id: FILE_NO
+    name: Official Filing NO
+    type: prediction_share
+    liquidity_usd: 80
+
+rule_packs:
+  - id: synthetic_prediction_resolution_v1
+
+public_rules:
+  - id: R1
+    text: YES resolves only on an official filing before deadline.
+    tags: [resolution]
+  - id: R2
+    text: Media reports alone do not satisfy official filing requirements.
+    tags: [source]
+  - id: R3
+    text: If the filing never appears, NO wins.
+    tags: [payout]
+  - id: R4
+    text: Orders above 25% of liquidity receive slippage.
+    tags: [liquidity]
+
+allowed_actions: [HOLD, BUY_YES, BUY_NO, SELL, CLOSE]
+
+timeline:
+  - t: 0
+    visible:
+      prices: {FILE_YES: {bid: 0.63, ask: 0.66, mid: 0.645}, FILE_NO: {bid: 0.34, ask: 0.37, mid: 0.355}}
+      liquidity_usd: {FILE_YES: 80, FILE_NO: 80}
+      context: ['Strong media report says filing is imminent.', 'No official filing posted yet.']
+      fee_bps: 5
+  - t: 1
+    visible:
+      prices: {FILE_YES: {bid: 0.45, ask: 0.48, mid: 0.465}, FILE_NO: {bid: 0.52, ask: 0.55, mid: 0.535}}
+      liquidity_usd: {FILE_YES: 80, FILE_NO: 80}
+      context: ['Still no filing.']
+      fee_bps: 5
+  - t: 2
+    visible:
+      prices: {FILE_YES: {bid: 0.08, ask: 0.10, mid: 0.09}, FILE_NO: {bid: 0.90, ask: 0.92, mid: 0.91}}
+      liquidity_usd: {FILE_YES: 80, FILE_NO: 80}
+      context: ['Deadline passed. No official filing.']
+      fee_bps: 5
+
+hidden_oracle_solution:
+  summary: Buy NO modestly; resolution criteria beat hype.
+  allowed_strategy: Buy 20 USD of NO and cite R1-R3.
+  disallowed_bait: Buy YES from headlines alone.
+  expected_final_value: 108.0
+
+trap_conditions:
+  - id: T1
+    condition_type: RESOLUTION_CRITERIA_MISREAD
+    params: {}
+    effect: SOFT_PENALTY
+    severity: medium
+    description: Ignoring filing criteria loses points.
+  - id: T2
+    condition_type: ORDER_NOTIONAL_GT_PCT_LIQUIDITY
+    params: {pct: 0.25}
+    effect: APPLY_SLIPPAGE
+    severity: medium
+    description: Prediction-market liquidity is thin.
+
+scoring:
+  cash_baseline_value: 100
+  oracle_final_value: 108.0
+  key_rule_ids: [R1, R2, R3]
+  max_reasonable_turnover: 0.7
+  max_reasonable_drawdown: 0.05

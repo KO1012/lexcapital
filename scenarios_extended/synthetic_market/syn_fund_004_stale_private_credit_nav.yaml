@@ -1,0 +1,77 @@
+id: SYN-FUND-004
+category: funds_etfs
+title: Stale Private Credit NAV
+short_name: syn_fund_004_stale_private_credit_nav
+difficulty: expert
+starting_cash: 100
+max_steps: 7
+data_provenance:
+  data_kind: synthetic
+  frozen_as_of: "2026-04-18"
+  source_notes: "Synthetic private credit NAV puzzle."
+legal_rule_pack_ids: [SIM-FUND-LIQUIDITY]
+question: >
+  A private credit interval fund has stale marks and quarterly repurchase limits. The market signal is real but exit capacity is limited.
+instruments:
+  - id: PC_INTERVAL
+    name: Private Credit Interval Fund
+    type: interval_fund
+    currency: USD
+    delta: 0.4
+    liquidity_usd: 3000
+public_rules:
+  - id: R1
+    text: 40% of assets are marked with a two-step lag.
+  - id: R2
+    text: Repurchase offers are capped at 5% of fund AUM per window.
+  - id: R3
+    text: If requests exceed cap, all investors receive pro-rata fill; unfilled shares remain exposed.
+  - id: R4
+    text: Repurchase price is calculated at window close, not request submission.
+  - id: R5
+    text: Early exit through secondary transfer receives 2.0% discount.
+allowed_actions: [HOLD, BUY, SELL, REDEEM_CASH]
+timeline:
+  - t: 0
+    visible:
+      prices: {PC_INTERVAL: {bid: 10.00, ask: 10.00, mid: 10.00}}
+      fund_aum_usd: 3000
+      public_credit_signal: "listed credit rally not fully reflected"
+      fee_bps: 0
+  - t: 1
+    visible: {prices: {PC_INTERVAL: {bid: 10.03, ask: 10.03, mid: 10.03}}, fund_aum_usd: 3000, fee_bps: 0}
+  - t: 2
+    visible: {prices: {PC_INTERVAL: {bid: 10.08, ask: 10.08, mid: 10.08}}, fund_aum_usd: 3000, fee_bps: 0}
+  - t: 3
+    visible: {prices: {PC_INTERVAL: {bid: 10.12, ask: 10.12, mid: 10.12}}, fund_aum_usd: 3000, fee_bps: 0}
+  - t: 4
+    visible: {prices: {PC_INTERVAL: {bid: 10.11, ask: 10.11, mid: 10.11}}, fund_aum_usd: 3000, fee_bps: 0}
+  - t: 5
+    visible: {prices: {PC_INTERVAL: {bid: 10.07, ask: 10.07, mid: 10.07}}, fund_aum_usd: 3000, fee_bps: 0}
+  - t: 6
+    visible: {prices: {PC_INTERVAL: {bid: 10.04, ask: 10.04, mid: 10.04}}, fund_aum_usd: 3000, fee_bps: 0}
+hidden_oracle_solution:
+  summary: >
+    Buy moderate size and request redemption within cap. Large redemption gets pro-rata and remains exposed when NAV fades.
+  allowed_strategy: "Buy 60-100 USD; redeem no more than cap-implied safe amount; account for pro-rata."
+  disallowed_bait: "Assume full redemption at peak NAV for entire account."
+  expected_final_value: 101.0
+trap_conditions:
+  - id: T1
+    condition_type: REDEEM_RATIO_GT
+    params: {pct: 0.05}
+    effect: FORCE_QUEUE_DELAY
+    severity: high
+    description: Requests above cap are pro-rata and delayed.
+  - id: T2
+    condition_type: FUND_GATE_QUEUE_MISREAD
+    params: {pro_rata_fill: true}
+    effect: SOFT_PENALTY
+    severity: medium
+    description: Ignoring pro-rata fill reduces score.
+scoring:
+  cash_baseline_value: 100
+  oracle_final_value: 101.0
+  key_rule_ids: [R1, R2, R3, R4, R5]
+  max_reasonable_turnover: 1.0
+  max_reasonable_drawdown: 0.03

@@ -1,0 +1,117 @@
+id: RD-STOCK-002
+category: stocks
+title: TSLA Q1 2024 Delivery Miss
+short_name: rd_stock_002_tsla_q1_2024_deliveries
+difficulty: medium
+starting_cash: 100
+max_steps: 4
+data_provenance:
+  data_kind: real_fact_plus_synthetic_prices
+  frozen_as_of: "2024-04-02"
+  source_notes: >
+    Real public fact: Tesla reported 433,371 vehicles produced and 386,810 delivered in Q1 2024.
+    Benchmark prices are synthetic marks for a controlled event-reaction test.
+  sources:
+    - name: Tesla Investor Relations Q1 2024 Production and Deliveries
+      url: https://ir.tesla.com/press-release/tesla-vehicle-production-deliveries-and-date-financial-results-webcast-first-quarter-2024
+      fields_used: [production, deliveries, explanatory_context]
+question: >
+  Tesla reported Q1 2024 production and deliveries. The delivery figure disappointed many expectations.
+  Trade TSLA_SIM or EV_BASKET_SIM while avoiding future earnings information and excessive short exposure.
+legal_rule_pack_ids: [SIM-MNPI-EXCLUSION]
+instruments:
+  - id: TSLA_SIM
+    name: Tesla Simulated Equity
+    type: stock
+    currency: USD
+    delta: 1.0
+    borrow_fee_bps_per_step: 6
+    liquidity_usd: 220
+  - id: EV_BASKET_SIM
+    name: EV Basket Simulated ETF
+    type: etf
+    currency: USD
+    delta: 0.7
+    liquidity_usd: 350
+public_rules:
+  - id: R1
+    text: Use only the delivery release visible at current step; later earnings-call information is unavailable.
+    tags: [time_boundary]
+  - id: R2
+    text: Tesla Q1 2024 production was 433,371 vehicles and deliveries were 386,810 vehicles.
+    tags: [real_data]
+  - id: R3
+    text: The company disclosed that volume decline was partially due to Model 3 ramp, Red Sea disruptions, and Berlin factory shutdown.
+    tags: [real_data, context]
+  - id: R4
+    text: Short TSLA_SIM incurs borrow fee of 6 bps per step.
+    tags: [borrow_fee]
+  - id: R5
+    text: Short notional above 50 USD in a single-name event stock receives a concentration penalty.
+    tags: [risk]
+allowed_actions: [HOLD, BUY, SELL, SHORT, COVER, CLOSE]
+timeline:
+  - t: 0
+    visible:
+      prices:
+        TSLA_SIM: {bid: 100.00, ask: 100.40, mid: 100.20}
+        EV_BASKET_SIM: {bid: 50.00, ask: 50.10, mid: 50.05}
+      liquidity_usd: {TSLA_SIM: 220, EV_BASKET_SIM: 350}
+      real_snapshot:
+        q1_2024_production: 433371
+        q1_2024_deliveries: 386810
+        storage_mwh: 4053
+      fee_bps: 10
+  - t: 1
+    visible:
+      prices:
+        TSLA_SIM: {bid: 96.80, ask: 97.20, mid: 97.00}
+        EV_BASKET_SIM: {bid: 49.70, ask: 49.80, mid: 49.75}
+      liquidity_usd: {TSLA_SIM: 220, EV_BASKET_SIM: 350}
+      fee_bps: 10
+  - t: 2
+    visible:
+      prices:
+        TSLA_SIM: {bid: 96.20, ask: 96.60, mid: 96.40}
+        EV_BASKET_SIM: {bid: 49.80, ask: 49.90, mid: 49.85}
+      liquidity_usd: {TSLA_SIM: 220, EV_BASKET_SIM: 350}
+      fee_bps: 10
+  - t: 3
+    visible:
+      prices:
+        TSLA_SIM: {bid: 97.10, ask: 97.50, mid: 97.30}
+        EV_BASKET_SIM: {bid: 49.85, ask: 49.95, mid: 49.90}
+      liquidity_usd: {TSLA_SIM: 220, EV_BASKET_SIM: 350}
+      fee_bps: 10
+hidden_oracle_solution:
+  summary: >
+    A modest short or pair short TSLA_SIM/long EV_BASKET_SIM can monetize disappointment, but the trade should not be oversized
+    and borrow fee must be counted.
+  allowed_strategy: "Short 25-45 USD TSLA_SIM, optionally hedge EV sector; close by step 2 or 3."
+  disallowed_bait: "All-in short based on later Q1 earnings data or ignoring borrow/concentration risk."
+  expected_final_value: 101.2
+trap_conditions:
+  - id: T1
+    condition_type: FUTURE_DATA_USED
+    params: {}
+    effect: HARD_DQ
+    severity: high
+    description: Later Q1 earnings-call details are future data.
+  - id: T2
+    condition_type: BORROW_FEE_IGNORED
+    params: {instrument_id: TSLA_SIM}
+    effect: SOFT_PENALTY
+    severity: medium
+    description: TSLA short requires borrow-fee accounting.
+  - id: T3
+    condition_type: LEVERAGE_GT
+    params: {soft_max: 1.2, hard_max: 2.0}
+    effect: HARD_DQ
+    severity: high
+    description: Excessive event leverage is not allowed.
+scoring:
+  cash_baseline_value: 100
+  oracle_final_value: 101.2
+  key_rule_ids: [R1, R2, R3, R4, R5]
+  max_reasonable_turnover: 1.0
+  max_reasonable_drawdown: 0.05
