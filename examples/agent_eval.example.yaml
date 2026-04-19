@@ -1,10 +1,10 @@
-adapter: openai
-model: gpt-5.4
+adapter: __CURRENT_AGENT_ADAPTER__
+model: __CURRENT_AGENT_MODEL__
 mode: agent
 scenarios: scenarios/mvp
-out: runs/gpt_5_4_agent
+out: runs/self_eval_current_agent
 temperature: 0.0
 max_output_tokens: 1200
 timeout_seconds: 60
 max_retries: 1
-notes: Edit adapter, model, scenarios, and out before running `python -m lexcapital self-eval`.
+notes: Replace placeholders automatically if your coding agent can infer its current runtime, or use `python -m lexcapital self-eval` / the render-next loop.
