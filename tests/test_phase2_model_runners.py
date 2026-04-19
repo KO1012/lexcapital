@@ -3,12 +3,12 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from finrulebench.adapters.local_http import LocalHTTPAdapter
-from finrulebench.adapters.openai_responses import OpenAIResponsesAdapter
-from finrulebench.core.replay import replay_scenario
-from finrulebench.runners.agent_runner import run_and_replay_agent_scenario
-from finrulebench.runners.run_config import RunConfig
-from finrulebench.runners.suite_runner import iter_scenario_paths
+from lexcapital.adapters.local_http import LocalHTTPAdapter
+from lexcapital.adapters.openai_responses import OpenAIResponsesAdapter
+from lexcapital.core.replay import replay_scenario
+from lexcapital.runners.agent_runner import run_and_replay_agent_scenario
+from lexcapital.runners.run_config import RunConfig
+from lexcapital.runners.suite_runner import iter_scenario_paths
 
 
 def _decision(step=0):
