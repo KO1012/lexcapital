@@ -1,35 +1,54 @@
 ---
 name: benchmark-evaluator
-description: Use this skill when you are asked to run FinRuleBench against a configured model from inside the repository.
+description: Use this skill when you are asked to run FinRuleBench against a configured model or to evaluate the current coding agent.
 ---
 
-When evaluating a model with this repository:
+When evaluating with this repository, prefer these workflows in order.
 
-1. Do not read scenario hidden fields directly.
-2. Prefer the built-in config-driven workflow.
-3. If no config exists, generate one:
+## Workflow A: self-eval
 
-```bash
-python -m finrulebench write-agent-template --out agent_eval.yaml
-```
-
-4. Edit `agent_eval.yaml` to set:
-- adapter
-- model
-- mode
-- scenarios
-- out
-
-5. Run:
+Use this when the repository can call a configured provider adapter or when the environment already exposes the current model/provider.
 
 ```bash
-python -m finrulebench agent-eval --config agent_eval.yaml
+python -m finrulebench self-eval
 ```
 
-6. Report:
-- `runs/.../suite_summary.json`
-- `runs/.../leaderboard_row.json`
-- per-scenario `score.json`
+If inference fails, pass explicit flags or set env vars:
+- `FINRULEBENCH_AGENT_ADAPTER`
+- `FINRULEBENCH_AGENT_MODEL`
+
+Example:
+
+```bash
+python -m finrulebench self-eval --adapter openai --model gpt-5.4
+```
+
+## Workflow B: current coding agent self-evaluation
+
+Use this when **you are the model being evaluated** and the repo should not call an external provider API.
+
+For each scenario:
+
+1. Start with an empty actions file.
+2. Request the next visible prompt:
+
+```bash
+python -m finrulebench render-next --scenario <SCENARIO_YAML> --actions <ACTIONS_JSONL>
+```
+
+3. Append exactly one `ModelDecision` JSON line for the returned `next_step` using your own reasoning.
+4. Repeat until `done=true`.
+5. Score with:
+
+```bash
+python -m finrulebench replay --scenario <SCENARIO_YAML> --actions <ACTIONS_JSONL> --out <RUN_DIR>
+```
+
+6. Aggregate with:
+
+```bash
+python -m finrulebench score-dir <RUN_ROOT>
+```
 
 Hard rules:
 - never connect to real trading systems
