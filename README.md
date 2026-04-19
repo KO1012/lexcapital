@@ -46,6 +46,42 @@ FinRuleBench does **not** connect to real broker APIs, exchanges, wallets, or li
 - `python -m finrulebench replay --scenario ... --actions ... --out runs/example`
 - `python -m finrulebench run-suite --scenarios scenarios/mvp --adapter mock --model mock-hold --out runs/mock_hold`
 - `python -m finrulebench score-dir runs/mock_hold`
+- `python -m finrulebench write-agent-template --out agent_eval.example.yaml`
+- `python -m finrulebench agent-eval --config agent_eval.example.yaml`
+
+## Agent integration
+
+If you want to hand the repository to an external coding agent (for example Codex) and have it run evaluations for a configured model, use the agent-eval workflow.
+
+1. Generate a config template:
+
+```bash
+python -m finrulebench write-agent-template --out agent_eval.yaml
+```
+
+2. Edit `agent_eval.yaml` and set:
+
+- `adapter`: `openai`, `local-http`, `mock`, or `file`
+- `model`: the target model name
+- `mode`: `policy` or `agent`
+- `scenarios`: scenario directory to run
+- `out`: output directory for scores and logs
+
+3. Run the evaluation:
+
+```bash
+python -m finrulebench agent-eval --config agent_eval.yaml
+```
+
+4. Read the result from:
+
+```text
+runs/.../suite_summary.json
+runs/.../leaderboard_row.json
+runs/.../<SCENARIO_ID>/score.json
+```
+
+This makes the repository agent-friendly: the agent only needs to edit a config file and run one command. The benchmark runner still enforces hidden-field isolation, deterministic replay, and simulated-only trading.
 
 ## Scoring
 
