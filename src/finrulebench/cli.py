@@ -11,6 +11,11 @@ from finrulebench.adapters.local_http import LocalHTTPAdapter
 from finrulebench.adapters.mock_adapter import MockAdapter
 from finrulebench.adapters.openai_responses import OpenAIResponsesAdapter
 from finrulebench.adapters.utils import default_hold_decision, parse_model_decision
+from finrulebench.agent_integration import (
+    load_agent_eval_config,
+    save_agent_eval_request,
+    write_agent_eval_template,
+)
 from finrulebench.core.hashing import canonical_json
 from finrulebench.core.leaderboard import build_leaderboard
 from finrulebench.core.portfolio import Portfolio
@@ -18,7 +23,10 @@ from finrulebench.core.prompt_renderer import render_model_prompt
 from finrulebench.core.replay import replay_scenario
 from finrulebench.core.scenario_loader import load_scenario, load_scenarios_dir
 from finrulebench.policies.baseline_hold import make_hold_decisions
-from finrulebench.runners.agent_runner import run_and_replay_agent_scenario
+from finrulebench.runners.agent_runner import (
+    collect_agent_actions_for_scenario,
+    run_and_replay_agent_scenario,
+)
 from finrulebench.runners.policy_runner import collect_actions_for_scenario, run_and_replay_scenario
 from finrulebench.runners.run_config import RunConfig
 from finrulebench.runners.suite_runner import run_suite as run_suite_impl
@@ -123,6 +131,41 @@ def make_hold_actions(
     typer.echo(str(out_path))
 
 
+@app.command("write-agent-template")
+def write_agent_template(
+    out: str = typer.Option("agent_eval.example.yaml", "--out"),
+):
+    path = write_agent_eval_template(out)
+    typer.echo(str(path))
+
+
+@app.command("agent-eval")
+def agent_eval(
+    config: str = typer.Option(..., "--config"),
+):
+    cfg = load_agent_eval_config(config)
+    run_config = _run_config(
+        cfg.model,
+        cfg.adapter,
+        cfg.mode,
+        cfg.temperature,
+        cfg.max_output_tokens,
+        cfg.timeout_seconds,
+        cfg.max_retries,
+        cfg.base_url,
+    )
+    adapter_obj = _adapter_from_name(
+        cfg.adapter,
+        cfg.model,
+        file_path=cfg.file_path,
+        base_url=cfg.base_url,
+    )
+    save_agent_eval_request(cfg, cfg.out)
+    run_suite_impl(cfg.scenarios, adapter_obj, run_config, cfg.out)
+    summary = build_leaderboard(cfg.out)
+    typer.echo(json.dumps(summary, indent=2))
+
+
 @app.command("collect-actions")
 def collect_actions(
     scenario: str = typer.Option(..., "--scenario"),
@@ -142,7 +185,8 @@ def collect_actions(
         model, adapter, mode, temperature, max_output_tokens, timeout_seconds, max_retries, base_url
     )
     adapter_obj = _adapter_from_name(adapter, model, file_path=file_path, base_url=base_url)
-    collect_actions_for_scenario(scenario, adapter_obj, run_config, out_actions, out_log)
+    collector = collect_agent_actions_for_scenario if mode == "agent" else collect_actions_for_scenario
+    collector(scenario, adapter_obj, run_config, out_actions, out_log)
     typer.echo(out_actions)
 
 
