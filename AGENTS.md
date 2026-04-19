@@ -25,6 +25,40 @@ FinRuleBench is a sandboxed AI financial decision benchmark. It evaluates models
 - The model runner collects actions; the replay engine scores them.
 - Private hidden fields must never be sent to adapters or agents.
 
+## External coding-agent workflow
+
+When an external coding agent receives this repository and is asked to evaluate a configured model, it should prefer the one-command workflow below instead of inventing its own runner.
+
+1. Generate a config template if none exists:
+
+```bash
+python -m finrulebench write-agent-template --out agent_eval.yaml
+```
+
+2. Edit `agent_eval.yaml` and set:
+
+- `adapter`
+- `model`
+- `mode`
+- `scenarios`
+- `out`
+
+3. Run the benchmark:
+
+```bash
+python -m finrulebench agent-eval --config agent_eval.yaml
+```
+
+4. Report results from:
+
+```text
+runs/.../suite_summary.json
+runs/.../leaderboard_row.json
+runs/.../<SCENARIO_ID>/score.json
+```
+
+The agent must not read hidden YAML fields directly or bypass the benchmark runner.
+
 ## Required verification commands
 
 ```bash
@@ -33,6 +67,7 @@ python -m finrulebench render-prompt --scenario scenarios/mvp/noctx_001_no_edge_
 python -m finrulebench make-hold-actions --scenario scenarios/mvp/noctx_001_no_edge_hold.yaml --out /tmp/noctx_hold.jsonl
 python -m finrulebench replay --scenario scenarios/mvp/noctx_001_no_edge_hold.yaml --actions /tmp/noctx_hold.jsonl --out runs/noctx_hold
 python -m finrulebench run-suite --scenarios scenarios/mvp --adapter mock --model mock-hold --out runs/mock_hold
+python -m finrulebench write-agent-template --out /tmp/agent_eval.yaml
 pytest -q
 ```
 
