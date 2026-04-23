@@ -48,9 +48,14 @@ def iter_scenario_yaml_paths(path: str | Path) -> list[Path]:
         return [root]
     if not root.exists():
         raise ScenarioAuditError(f"Scenario path does not exist: {root}")
+    scenario_paths = {
+        scenario_path
+        for pattern in ("*.yaml", "*.yml")
+        for scenario_path in root.rglob(pattern)
+    }
     return [
         scenario_path
-        for scenario_path in sorted(root.rglob("*.yaml"))
+        for scenario_path in sorted(scenario_paths)
         if "rule_packs" not in scenario_path.parts
     ]
 
@@ -92,7 +97,10 @@ def _hidden_payload(scenario: Scenario) -> dict[str, Any]:
     return {
         "hidden_oracle_solution": scenario.hidden_oracle_solution,
         "hidden_future": [step.hidden_future for step in scenario.timeline[: scenario.max_steps]],
+        "trap_conditions": scenario.trap_conditions,
+        "scoring": scenario.scoring,
         "notes_for_authors": scenario.notes_for_authors,
+        "private_tip": getattr(scenario, "private_tip", None),
     }
 
 
@@ -126,7 +134,7 @@ def _render_prompt_leak_findings(scenario: Scenario) -> list[dict[str, Any]]:
                         "step": step,
                         "kind": "hidden_value_leak",
                         "value": hidden_value[:160],
-                        "message": "Hidden oracle/future text was rendered into the prompt.",
+                        "message": "Hidden oracle/future/trap/scoring text was rendered into the prompt.",
                     }
                 )
 
@@ -185,6 +193,32 @@ def _counter_to_dict(counter: Counter[str]) -> dict[str, int]:
     return {key: counter[key] for key in sorted(counter)}
 
 
+def _violation_to_dict(violation: Any) -> dict[str, Any]:
+    payload = _jsonable(violation)
+    return {
+        "step": payload.get("step"),
+        "trap_id": payload.get("trap_id"),
+        "condition_type": payload.get("condition_type"),
+        "effect": payload.get("effect"),
+        "message": payload.get("message"),
+        "hard_dq": payload.get("hard_dq"),
+        "penalty_points": payload.get("penalty_points"),
+    }
+
+
+def _target_trap_violations(
+    violations: Iterable[dict[str, Any]], scenario: Scenario
+) -> list[dict[str, Any]]:
+    target_ids = {trap.id for trap in scenario.trap_conditions}
+    target_types = {trap.condition_type.value for trap in scenario.trap_conditions}
+    return [
+        violation
+        for violation in violations
+        if violation.get("trap_id") in target_ids
+        and violation.get("condition_type") in target_types
+    ]
+
+
 def _audit_replay(
     scenario_path: Path,
     actions_path: Path,
@@ -192,12 +226,14 @@ def _audit_replay(
     run_name: str,
 ) -> dict[str, Any]:
     result = replay_scenario(str(scenario_path), str(actions_path), str(out_root / run_name))
+    violations = [_violation_to_dict(violation) for violation in result.violations]
     return {
         "gate": result.gate,
         "final_value": result.final_value,
         "scenario_score": result.scenario_score,
         "violation_count": len(result.violations),
         "hard_dq_reason": result.hard_dq_reason,
+        "violations": violations,
     }
 
 
@@ -222,6 +258,7 @@ def audit_scenario(
         "oracle_replay": None,
         "red_path": None,
         "red_replay": None,
+        "red_target_trap_violations": [],
     }
 
     try:
@@ -239,6 +276,7 @@ def audit_scenario(
             "trap_condition_types": [
                 trap.condition_type.value for trap in scenario.trap_conditions
             ],
+            "target_trap_ids": [trap.id for trap in scenario.trap_conditions],
             "expected_skill": list(scenario.expected_skill),
             "trap_type": scenario.trap_type,
         }
@@ -281,9 +319,15 @@ def audit_scenario(
             if red_path:
                 entry["red_path"] = str(red_path)
                 red = _audit_replay(path, red_path, run_root, f"{path.stem}_red")
+                target_violations = _target_trap_violations(red["violations"], scenario)
+                red["target_trap_violation_count"] = len(target_violations)
+                red["target_trap_violations"] = target_violations
                 entry["red_replay"] = red
+                entry["red_target_trap_violations"] = target_violations
                 if red["violation_count"] == 0:
                     entry["errors"].append("red_path_did_not_trigger_violation")
+                if not target_violations:
+                    entry["errors"].append("red_path_did_not_trigger_target_trap")
             else:
                 entry["warnings"].append("no_red_path_sidecar_found")
 
@@ -356,7 +400,7 @@ def audit_scenarios(
         ),
         "red_paths_found": len(red_runs),
         "red_path_trigger_rate": (
-            sum(1 for run in red_runs if run["violation_count"] > 0) / len(red_runs)
+            sum(1 for run in red_runs if run.get("target_trap_violation_count", 0) > 0) / len(red_runs)
             if red_runs
             else None
         ),
@@ -396,7 +440,7 @@ def _audit_summary_markdown(report: dict[str, Any]) -> str:
         f"Oracle paths found: `{report['oracle_paths_found']}`",
         f"Oracle non-DQ rate: `{report['oracle_non_dq_rate']}`",
         f"Red paths found: `{report['red_paths_found']}`",
-        f"Red trigger rate: `{report['red_path_trigger_rate']}`",
+        f"Red target-trap trigger rate: `{report['red_path_trigger_rate']}`",
         "",
         "## Failed scenarios",
         "",
