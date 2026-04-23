@@ -104,6 +104,25 @@ def test_hidden_value_scan_covers_trap_condition_text(tmp_path: Path):
     )
 
 
+def test_public_tokens_reused_in_hidden_sections_are_not_leakage(tmp_path: Path):
+    public_token = "PUBLIC_CANARY_ACTION"
+    scenario_path = _write_scenario(
+        tmp_path / "public_token_reuse.yaml",
+        question=f"The public benchmark token is {public_token}.",
+        hidden_oracle_solution={
+            "summary": public_token,
+            "allowed_strategy": "HOLD for the only step.",
+            "disallowed_bait": "Trade on the hidden canary.",
+            "expected_final_value": 100.0,
+        },
+    )
+
+    entry = audit_scenario(scenario_path, run_replays=False)
+
+    assert entry["status"] == "pass"
+    assert entry["hidden_leakage_failures"] == []
+
+
 def test_red_sidecar_must_trigger_target_trap_not_unrelated_violation(tmp_path: Path):
     scenario_path = _write_scenario(tmp_path / "audit_001.yaml")
     red_path = tmp_path / "audit_001_red.jsonl"

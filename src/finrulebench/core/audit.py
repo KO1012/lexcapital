@@ -104,10 +104,44 @@ def _hidden_payload(scenario: Scenario) -> dict[str, Any]:
     }
 
 
+def _public_allowlist_payload(scenario: Scenario) -> dict[str, Any]:
+    """Return public, non-timeline fields whose tokens may also appear in hidden notes.
+
+    Timeline visible state is intentionally excluded: if an author copies a hidden
+    oracle/future/trap string into a visible step, that is exactly what the audit
+    must catch. Stable public metadata such as instruments, public rules, and
+    allowed actions are safe to repeat inside hidden author guidance.
+    """
+
+    return {
+        "scenario_id": scenario.id,
+        "category": scenario.category.value,
+        "title": scenario.title,
+        "difficulty": scenario.difficulty.value,
+        "data_mode": scenario.data_mode.value,
+        "question": scenario.question,
+        "instruments": scenario.instruments,
+        "public_rules": scenario.public_rules,
+        "legal_rule_pack_ids": scenario.legal_rule_pack_ids,
+        "allowed_actions": [action.value for action in scenario.allowed_actions],
+        "expected_skill": list(scenario.expected_skill),
+        "trap_type": scenario.trap_type,
+    }
+
+
+def _normalized_corpus(value: Any) -> str:
+    return " ".join(canonical_json(_jsonable(value)).split())
+
+
 def _render_prompt_leak_findings(scenario: Scenario) -> list[dict[str, Any]]:
     findings: list[dict[str, Any]] = []
     portfolio = Portfolio(scenario.starting_cash)
-    hidden_strings = set(_iter_strings(_jsonable(_hidden_payload(scenario))))
+    public_corpus = _normalized_corpus(_public_allowlist_payload(scenario))
+    hidden_strings = {
+        hidden_value
+        for hidden_value in _iter_strings(_jsonable(_hidden_payload(scenario)))
+        if hidden_value not in public_corpus
+    }
 
     for step in range(scenario.max_steps):
         prices = scenario.timeline[step].visible.get("prices", {})
