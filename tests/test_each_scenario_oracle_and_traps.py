@@ -1,8 +1,8 @@
 import json
 from pathlib import Path
 
-from finrulebench.core.replay import replay_scenario
-from finrulebench.policies.scripted_oracles import oracle_decisions_for_scenario
+from lexcapital.core.replay import replay_scenario
+from lexcapital.policies.scripted_oracles import oracle_decisions_for_scenario
 
 from .conftest import ROOT, scenario_paths
 

@@ -1,3 +1,5 @@
-from finrulebench.agent_tools.submit_decision import submit_decision
+from lexcapital.core.models import ModelDecision
 
-__all__ = ["submit_decision"]
+
+def submit_decision(decision):
+    return ModelDecision.model_validate(decision)

@@ -1,4 +1,4 @@
-from finrulebench.core.scenario_loader import load_scenario
+from lexcapital.core.scenario_loader import load_scenario
 
 from .conftest import scenario_paths
 

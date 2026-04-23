@@ -1,7 +1,7 @@
-from finrulebench.core.models import ActionType, ModelDecision
-from finrulebench.core.portfolio import Portfolio
-from finrulebench.core.rule_engine import evaluate_pre_trade_traps
-from finrulebench.core.scenario_loader import load_scenario
+from lexcapital.core.models import ActionType, ModelDecision
+from lexcapital.core.portfolio import Portfolio
+from lexcapital.core.rule_engine import evaluate_pre_trade_traps
+from lexcapital.core.scenario_loader import load_scenario
 
 from .conftest import ROOT
 

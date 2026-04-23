@@ -1,7 +1,7 @@
-from finrulebench.adapters.mock_adapter import MockAdapter
-from finrulebench.core.replay import replay_scenario
-from finrulebench.runners.policy_runner import collect_actions_for_scenario
-from finrulebench.runners.run_config import RunConfig
+from lexcapital.adapters.mock_adapter import MockAdapter
+from lexcapital.core.replay import replay_scenario
+from lexcapital.runners.policy_runner import collect_actions_for_scenario
+from lexcapital.runners.run_config import RunConfig
 
 from .conftest import ROOT
 

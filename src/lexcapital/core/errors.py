@@ -1,14 +1,14 @@
-class LexcapitalError(Exception):
-    """Base exception for lexcapital."""
+class LexCapitalError(Exception):
+    """Base exception for LexCapital."""
 
 
-class ScenarioValidationError(LexcapitalError):
+class ScenarioValidationError(LexCapitalError):
     """Scenario file failed validation."""
 
 
-class ReplayError(LexcapitalError):
+class ReplayError(LexCapitalError):
     """Replay failed."""
 
 
-class AdapterError(LexcapitalError):
+class AdapterError(LexCapitalError):
     """Model adapter failed."""

@@ -67,7 +67,7 @@ class LocalHTTPAdapter:
                 {
                     "role": "system",
                     "content": (
-                        "You are being evaluated in lexcapital. Return only JSON matching "
+                        "You are being evaluated in LexCapital. Return only JSON matching "
                         "the ModelDecision schema. Do not output markdown or chain-of-thought."
                     ),
                 },

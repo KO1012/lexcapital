@@ -1,5 +1,5 @@
-from finrulebench.core.hashing import sha256_json
-from finrulebench.core.replay import replay_scenario
+from lexcapital.core.hashing import sha256_json
+from lexcapital.core.replay import replay_scenario
 
 from .conftest import ROOT
 

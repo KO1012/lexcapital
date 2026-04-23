@@ -1,10 +1,10 @@
 import pytest
 
-from finrulebench.agent_tools.calculator import calculate
-from finrulebench.agent_tools.submit_decision import submit_decision
-from finrulebench.core.portfolio import Portfolio
-from finrulebench.core.prompt_renderer import render_model_prompt
-from finrulebench.core.scenario_loader import load_scenario
+from lexcapital.agent_tools.calculator import calculate
+from lexcapital.agent_tools.submit_decision import submit_decision
+from lexcapital.core.portfolio import Portfolio
+from lexcapital.core.prompt_renderer import render_model_prompt
+from lexcapital.core.scenario_loader import load_scenario
 
 from .conftest import ROOT
 

@@ -104,7 +104,7 @@ class OpenAIResponsesAdapter:
                 {
                     "role": "system",
                     "content": (
-                        "You are being evaluated in lexcapital. Return only a JSON object "
+                        "You are being evaluated in LexCapital. Return only a JSON object "
                         "matching the supplied ModelDecision schema. Do not reveal chain-of-thought."
                     ),
                 },

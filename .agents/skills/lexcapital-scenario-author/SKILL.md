@@ -1,6 +1,6 @@
 ---
-name: finrulebench-scenario-author
-description: Use this skill when creating, validating, or mutating FinRuleBench scenarios.
+name: lexcapital-scenario-author
+description: Use this skill when creating, validating, or mutating LexCapital scenarios.
 ---
 
 When creating or editing a scenario:

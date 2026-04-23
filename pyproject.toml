@@ -32,7 +32,7 @@ openai = [
 lexcapital = "lexcapital.cli:app"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/lexcapital", "src/finrulebench"]
+packages = ["src/lexcapital"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

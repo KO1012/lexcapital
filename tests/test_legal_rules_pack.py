@@ -1,6 +1,6 @@
-from finrulebench.core.legal_rules import load_rule_pack_registry
-from finrulebench.core.models import TrapConditionType
-from finrulebench.core.scenario_loader import load_scenario
+from lexcapital.core.legal_rules import load_rule_pack_registry
+from lexcapital.core.models import TrapConditionType
+from lexcapital.core.scenario_loader import load_scenario
 
 from .conftest import extended_scenario_paths
 

@@ -5,7 +5,7 @@ from pathlib import Path
 
 import yaml
 
-from finrulebench.core.audit import audit_scenario, audit_scenarios
+from lexcapital.core.audit import audit_scenario, audit_scenarios
 
 
 def _scenario_payload(**updates):
