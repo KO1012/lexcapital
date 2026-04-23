@@ -50,6 +50,7 @@ lexcapital does **not** connect to real broker APIs, exchanges, wallets, or live
 - `python -m lexcapital write-agent-template --out agent_eval.example.yaml`
 - `python -m lexcapital agent-eval --config agent_eval.example.yaml`
 - `python -m lexcapital self-eval`
+- `python -m lexcapital audit-scenarios --scenarios scenarios/mvp --out audits/mvp`
 
 ## Agent integration
 
@@ -123,3 +124,22 @@ Write YAML under `scenarios/mvp/` using the schema in `src/lexcapital/core/model
 python -m lexcapital validate scenarios/mvp
 pytest -q
 ```
+
+
+## Phase-2 scenario audit
+
+Use the audit command before expanding the benchmark or publishing a run:
+
+```bash
+python -m lexcapital audit-scenarios --scenarios scenarios/mvp --out audits/mvp
+python -m lexcapital audit-scenarios --scenarios scenarios_extended --out audits/extended --strict
+```
+
+The audit checks hidden-field leakage, HOLD replay safety, optional oracle/red sidecars, provenance coverage, and category/difficulty/trap balance. It writes `audit_report.json` and `audit_summary.md` under the requested output directory.
+
+## Phase-2 docs
+
+- `docs/benchmark_spec_v0.2.md`
+- `docs/scenario_authoring_guide.md`
+- `docs/eval_protocol.md`
+- `docs/scoring_rubric.md`

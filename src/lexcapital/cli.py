@@ -18,6 +18,7 @@ from lexcapital.agent_integration import (
     save_agent_eval_request,
     write_agent_eval_template,
 )
+from lexcapital.core.audit import audit_scenarios as audit_scenarios_impl
 from lexcapital.core.execution import execute_decision
 from lexcapital.core.hashing import canonical_json
 from lexcapital.core.leaderboard import build_leaderboard
@@ -124,6 +125,19 @@ def validate(paths: list[str] = typer.Argument(...)):
         entries = load_scenarios_dir(raw_path)
         count += len(entries)
     rprint({"validated": count})
+
+
+@app.command("audit-scenarios")
+def audit_scenarios(
+    scenarios: str = typer.Option(..., "--scenarios"),
+    out: str = typer.Option("audits/scenario_audit", "--out"),
+    skip_replay: bool = typer.Option(False, "--skip-replay"),
+    strict: bool = typer.Option(False, "--strict/--no-strict"),
+):
+    report = audit_scenarios_impl(scenarios, out=out, run_replays=not skip_replay)
+    typer.echo(json.dumps(report, ensure_ascii=False, indent=2))
+    if strict and report["status"] != "pass":
+        raise typer.Exit(1)
 
 
 @app.command("render-prompt")

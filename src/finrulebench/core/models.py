@@ -174,6 +174,9 @@ class Scenario(BaseModel):
     notes_for_authors: str | None = None
     short_name: str | None = None
     scenario_category_alias: str | None = None
+    expected_skill: list[str] = Field(default_factory=list)
+    trap_type: str | None = None
+    baseline_expectations: dict[str, Any] = Field(default_factory=dict)
 
     @field_validator("starting_cash")
     @classmethod
