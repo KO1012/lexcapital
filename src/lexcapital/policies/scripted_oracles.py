@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from finrulebench.core.models import ActionType, ModelDecision
+from lexcapital.core.models import ActionType, ModelDecision
 
 
 def oracle_decisions_for_scenario(scenario_id: str) -> list[ModelDecision]:

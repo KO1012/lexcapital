@@ -1,5 +1,5 @@
-from finrulebench.adapters.mock_adapter import MockAdapter
-from finrulebench.runners.run_config import RunConfig
+from lexcapital.adapters.mock_adapter import MockAdapter
+from lexcapital.runners.run_config import RunConfig
 
 
 def test_mock_adapter_returns_decision():

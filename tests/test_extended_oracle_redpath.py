@@ -1,8 +1,8 @@
 import json
 from pathlib import Path
 
-from finrulebench.core.replay import replay_scenario
-from finrulebench.core.scenario_loader import load_scenario
+from lexcapital.core.replay import replay_scenario
+from lexcapital.core.scenario_loader import load_scenario
 
 from .conftest import ROOT, extended_scenario_paths
 

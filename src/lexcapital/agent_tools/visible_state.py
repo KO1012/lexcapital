@@ -1,3 +1,5 @@
-from finrulebench.agent_tools.visible_state import get_visible_state
+from lexcapital.core.prompt_renderer import render_model_prompt
 
-__all__ = ["get_visible_state"]
+
+def get_visible_state(scenario, step, portfolio_state):
+    return render_model_prompt(scenario, step, portfolio_state)

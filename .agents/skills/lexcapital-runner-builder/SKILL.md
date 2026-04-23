@@ -1,5 +1,5 @@
 ---
-name: finrulebench-runner-builder
+name: lexcapital-runner-builder
 description: Use this skill when building model adapters, policy runners, agent runners, or suite runners.
 ---
 

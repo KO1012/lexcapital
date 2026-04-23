@@ -1,7 +1,7 @@
-from finrulebench.core.models import ActionType, ModelDecision, RuleViolation, TrapConditionType, TrapEffect
-from finrulebench.core.portfolio import Portfolio
-from finrulebench.core.scenario_loader import load_scenario
-from finrulebench.core.scorer import score_result
+from lexcapital.core.models import ActionType, ModelDecision, RuleViolation, TrapConditionType, TrapEffect
+from lexcapital.core.portfolio import Portfolio
+from lexcapital.core.scenario_loader import load_scenario
+from lexcapital.core.scorer import score_result
 
 from .conftest import ROOT
 

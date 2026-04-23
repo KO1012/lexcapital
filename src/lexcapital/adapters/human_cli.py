@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from finrulebench.core.models import ActionType, ModelDecision
+from lexcapital.core.models import ActionType, ModelDecision
 
 
 class HumanCLIAdapter:

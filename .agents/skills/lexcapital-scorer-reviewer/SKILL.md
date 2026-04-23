@@ -1,5 +1,5 @@
 ---
-name: finrulebench-scorer-reviewer
+name: lexcapital-scorer-reviewer
 description: Use this skill when implementing or reviewing scoring, replay, compliance gates, and leaderboard aggregation.
 ---
 

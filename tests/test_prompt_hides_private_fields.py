@@ -1,8 +1,8 @@
 import json
 
-from finrulebench.core.portfolio import Portfolio
-from finrulebench.core.prompt_renderer import render_model_prompt
-from finrulebench.core.scenario_loader import load_scenario
+from lexcapital.core.portfolio import Portfolio
+from lexcapital.core.prompt_renderer import render_model_prompt
+from lexcapital.core.scenario_loader import load_scenario
 
 from .conftest import ROOT, scenario_paths
 
